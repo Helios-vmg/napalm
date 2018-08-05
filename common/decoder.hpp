@@ -1,0 +1,193 @@
+#pragma once
+
+#include "WrappedExternalIO.hpp"
+#include "decoder_module.h"
+#include "audio_format.h"
+#include <limits>
+#include <cstdint>
+#include <boost/rational.hpp>
+#include <vector>
+
+typedef boost::rational<std::int64_t> rational_t;
+
+template <typename T>
+double to_double(const boost::rational<T> &r){
+	return (double)r.numerator() / (double)r.denominator();
+}
+
+template <typename T, T limit>
+boost::rational<T> to_rational(double x){
+	typedef boost::rational<T> R;
+	if (!x)
+		return R(0, 1);
+	bool negative = x < 0;
+	if (negative)
+		x = -x;
+	R ret;
+	{
+		R hi(1, 1);
+		R lo(0, 1);
+		while (x > to_double(hi)){
+			if (hi >= std::numeric_limits<T>::max() / 2)
+				throw std::overflow_error("double out of bounds");
+			lo = hi;
+			hi *= 2;
+		}
+
+		auto delta = hi - lo;
+		while (true){
+			delta /= 2;
+			auto c = lo + delta;
+			if (c.numerator() >= limit || c.denominator() >= limit){
+				ret = lo;
+				break;
+			}
+			if (x < to_double(c))
+				hi = c;
+			else if (x > to_double(c))
+				lo = c;
+			else{
+				ret = c;
+				break;
+			}
+		}
+	}
+	return negative ? -ret : ret;
+}
+
+class DecoderSubstream;
+
+class Decoder{
+protected:
+	WrappedExternalIO io;
+	std::int64_t position = 0;
+	struct StreamRange{
+		rational_t time_begin;
+		rational_t time_length;
+		std::int64_t sample_begin;
+		int frequency;
+	};
+	std::vector<StreamRange> stream_ranges;
+
+	virtual ReadResult *internal_read(const AudioFormat &) = 0;
+	std::int64_t time_to_sample(const rational_t &time) const{
+		auto beg = this->stream_ranges.begin();
+		auto end = this->stream_ranges.end();
+		auto it = std::find_if(beg, end, [&time](const StreamRange &sr){ return time >= sr.time_begin; });
+		if (it == end)
+			return -1;
+		auto conv = (time - it->time_begin) * it->frequency;
+		return it->sample_begin + conv.numerator() / conv.denominator();
+	}
+public:
+	Decoder(const ExternalIO &io): io(io){}
+	virtual ~Decoder(){}
+	ReadResult *read(const AudioFormat &af){
+		auto ret = this->internal_read(af);
+		if (!ret)
+			return ret;
+		this->position += ret->sample_count;
+		return ret;
+	}
+	virtual std::int64_t seek_to_sample(std::int64_t pos, bool fast){
+		if (pos == this->position)
+			return pos;
+		return -1;
+	}
+	virtual rational_t seek_to_second(const rational_t &second, bool fast){
+		auto sample = this->time_to_sample(second);
+		if (sample < 0)
+			return rational_t(-1, 1);
+		auto ret = this->seek_to_sample(sample, fast);
+		if (ret < 0)
+			return rational_t(-1, 1);
+		return second;
+	}
+	virtual std::int64_t sample_tell(){
+		return this->position;
+	}
+	virtual int get_substream_count(){
+		return 1;
+	}
+	virtual DecoderSubstream *get_substream(int index) = 0;
+};
+
+inline RationalValue to_RationalValue(const rational_t &r){
+	return {r.numerator(), r.denominator()};
+}
+
+inline rational_t to_rational(const RationalValue &rv){
+	return {rv.numerator, rv.denominator};
+}
+
+class DecoderSubstream{
+protected:
+	Decoder &parent;
+	int index;
+	std::uint64_t first_sample = 0;
+	rational_t first_moment = {0, 1};
+	std::uint64_t position = 0;
+	std::uint64_t length = std::numeric_limits<std::uint64_t>::max();
+	rational_t seconds_length = {-1, 1};
+	AudioFormat format;
+public:
+	DecoderSubstream(
+		Decoder &parent,
+		int index = 0,
+		std::uint64_t first_sample = 0,
+		std::uint64_t length = std::numeric_limits<std::uint64_t>::max(),
+		const rational_t &first_moment = 0,
+		const rational_t &seconds_length = {-1, 1}
+	):
+		parent(parent),
+		index(index),
+		first_sample(first_sample),
+		first_moment(first_moment),
+		length(length),
+		seconds_length(seconds_length){}
+	virtual ~DecoderSubstream(){}
+	virtual RationalValue get_length_in_seconds(){
+		return to_RationalValue(this->seconds_length);
+	}
+	virtual std::uint64_t get_length_in_samples(){
+		return this->length;
+	}
+	virtual std::int64_t seek_to_sample(std::int64_t pos, bool fast){
+		if (pos < 0 || (std::uint64_t)pos >= this->length)
+			return -1;
+		auto new_pos = this->parent.seek_to_sample(this->first_sample + pos, fast);
+		if (new_pos < 0)
+			return new_pos;
+		this->position = (std::uint64_t)new_pos - this->first_sample;
+		return this->position;
+	}
+	virtual RationalValue seek_to_second(const RationalValue &pos, bool fast){
+		auto r = to_rational(pos);
+		RationalValue ret{-1, 1};
+		if (r < this->seconds_length){
+			auto new_pos = this->parent.seek_to_second(this->first_moment + r, fast);
+			if (new_pos >= 0)
+				this->position = (std::uint64_t)this->parent.sample_tell() - this->first_sample;
+			ret = to_RationalValue(new_pos);
+		}
+		return ret;
+	}
+	virtual ReadResult *read(){
+		if (this->position >= this->length)
+			return nullptr;
+		auto sample = this->position + this->first_sample;
+		if (this->parent.seek_to_sample(sample, false) != sample)
+			return nullptr;
+		auto ret = this->parent.read(this->format);
+		if (!ret)
+			return nullptr;
+		if ((std::uint64_t)ret->sample_count > this->length - this->position)
+			ret->sample_count = (size_t)(this->length - this->position);
+		this->position += ret->sample_count;
+		return ret;
+	}
+	virtual AudioFormat get_audio_format(){
+		return this->format;
+	}
+	virtual void set_number_format_hint(NumberFormat nf){}
+};
