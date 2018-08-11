@@ -171,6 +171,7 @@
     <ClInclude Include="..\common\module.h" />
     <ClInclude Include="..\common\output_module.h" />
     <ClInclude Include="..\common\WrappedExternalIO.hpp" />
+    <ClInclude Include="AudioQueue.h" />
     <ClInclude Include="BufferSource.h" />
     <ClInclude Include="Decoder.h" />
     <ClInclude Include="Filter.h" />
@@ -182,6 +183,7 @@
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AudioQueue.cpp" />
     <ClCompile Include="Decoder.cpp" />
     <ClCompile Include="ChannelMixerFilter.cpp" />
     <ClCompile Include="Filter.cpp" />

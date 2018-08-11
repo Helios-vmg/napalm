@@ -2,6 +2,8 @@
 #include "Module.h"
 #include "../common/decoder_module.h"
 
+std::atomic<std::uint64_t> DecoderSubstream::next_stream_id(0);
+
 void release_buffer(AudioBuffer *rr){
 	if (rr)
 		rr->release_function(rr->opaque);
@@ -73,7 +75,8 @@ std::unique_ptr<DecoderSubstream> Decoder::get_substream(int index){
 
 DecoderSubstream::DecoderSubstream(Decoder &decoder, int index):
 		module(decoder.module),
-		substream_ptr(nullptr, decoder.module.substream_close){
+		substream_ptr(nullptr, decoder.module.substream_close),
+		stream_id(this->next_stream_id++){
 
 	this->substream_ptr.reset(this->module.decoder_get_substream(decoder.decoder_ptr.get(), index));
 	if (!this->substream_ptr){
@@ -107,6 +110,7 @@ audio_buffer_t DecoderSubstream::read(){
 	extra_data.timestamp.numerator = this->current_time.numerator();
 	extra_data.timestamp.denominator = this->current_time.denominator();
 	extra_data.next = nullptr;
+	extra_data.stream_id = this->stream_id;
 	this->current_time += rational_t(ret->sample_count, freq);
 
 	return ret;

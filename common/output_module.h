@@ -54,10 +54,13 @@ typedef size_t (*AudioCallback)(void *cb_data, void *dst, size_t size, size_t sa
 
 typedef void (*AudioFormatChangedCallback)(void *cb_data, const AudioFormat *af);
 
+typedef void (*AudioVolumeChangedCallback)(void *cb_data, double);
+
 typedef struct{
 	void *cb_data;
 	AudioCallback audio_callback;
 	AudioFormatChangedCallback format_changed;
+	AudioVolumeChangedCallback volume_changed;
 } AudioCallbackData;
 
 
@@ -88,3 +91,4 @@ typedef void (*output_device_flush_f)(OutputDevicePtr);
 //calling its AudioCallback, but it must handle the callee sometimes writing no
 //data to the buffer.
 typedef void (*output_device_pause_f)(OutputDevicePtr, int pause_active);
+

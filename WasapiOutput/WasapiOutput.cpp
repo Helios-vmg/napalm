@@ -535,13 +535,21 @@ void SpecificWasapiOutputDevice::get_more_samples(){
 		return;
 	auto samples_read = this->get_audio(buffer, samples_to_read, samples_queued);
 	DWORD flags = 0;
+	double underflow = 0;
 	if (samples_read){
 		auto bytes_read = samples_read * this->bytes_per_sample;
-		memset(buffer + bytes_read, 0, samples_to_read * this->bytes_per_sample - bytes_read);
+		auto zeroes = samples_to_read * this->bytes_per_sample - bytes_read;
+		if (zeroes){
+			underflow = (double)(samples_to_read - samples_read) / this->selected_format.freq;
+			memset(buffer + bytes_read, 0, zeroes);
+		}
 	}else{
 		flags = AUDCLNT_BUFFERFLAGS_SILENT;
 		samples_read = samples_to_read;
+			underflow = (double)samples_to_read / this->selected_format.freq;
 	}
+	if (underflow)
+		std::cout << "Underflow detected. " << underflow * 1000 << " ms.\n";
 	result = this->render_client->ReleaseBuffer(samples_read, flags);
 }
 
@@ -593,13 +601,13 @@ public:
 	STDMETHOD(OnSessionDisconnected) (AudioSessionDisconnectReason DisconnectReason){
 		switch (DisconnectReason){
 			case DisconnectReasonDeviceRemoval:
-				(*this->switching_streams) = true;
+				*this->switching_streams = true;
 				SetEvent(this->stream_switch_event.get());
 				break;
 			case DisconnectReasonServerShutdown:
 				break;
 			case DisconnectReasonFormatChanged:
-				(*this->switching_streams) = true;
+				*this->switching_streams = true;
 				SetEvent(this->stream_switch_event.get());
 				SetEvent(this->stream_switch_complete_event.get());
 				break;
@@ -617,7 +625,7 @@ public:
 	STDMETHOD(OnDefaultDeviceChanged)(EDataFlow Flow, ERole Role, LPCWSTR NewDefaultDeviceId){
 		bool expected = false;
 		if (this->switching_streams->compare_exchange_strong(expected, true))
-			SetEvent(this->stream_switch_complete_event.get());
+			SetEvent(this->stream_switch_event.get());
 		SetEvent(this->stream_switch_complete_event.get());
 		return S_OK;
 	}
@@ -689,6 +697,9 @@ bool DefaultWasapiOutputDevice::switch_streams(){
 		if (!SUCCEEDED(result))
 			return false;
 		result = this->session_control->UnregisterAudioSessionNotification(this->notifier.get());
+		if (!SUCCEEDED(result))
+			return false;
+		result = this->enumerator->UnregisterEndpointNotificationCallback(this->notifier.get());
 		if (!SUCCEEDED(result))
 			return false;
 		this->session_control.reset();

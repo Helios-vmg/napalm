@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <string>
 #include <boost/optional.hpp>
+#include <atomic>
 
 class InputStream;
 class DecoderSubstream;
@@ -16,6 +17,7 @@ struct BufferExtraData{
 	RationalValue timestamp;
 	AudioBuffer *next;
 	size_t sample_offset;
+	std::uint64_t stream_id;
 };
 
 class DecoderModule{
@@ -64,6 +66,8 @@ class DecoderSubstream : public BufferSource{
 	std::unique_ptr<std::remove_pointer<DecoderSubstreamPtr>::type, substream_close_f> substream_ptr;
 	boost::optional<AudioFormat> format;
 	rational_t current_time = {0, 1};
+	static std::atomic<std::uint64_t> next_stream_id;
+	std::uint64_t stream_id;
 	
 	DecoderSubstream(Decoder &decoder, int index);
 public:
@@ -74,6 +78,12 @@ public:
 	std::uint64_t get_length_in_samples();
 	std::int64_t seek_to_sample(std::int64_t sample, bool fast);
 	rational_t seek_to_second(const rational_t &time, bool fast);
+	std::unique_ptr<BufferSource> unroll_chain() override{
+		return nullptr;
+	}
+	std::uint64_t get_stream_id() const{
+		return this->stream_id;
+	}
 };
 
 void release_buffer(AudioBuffer *rr);

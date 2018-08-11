@@ -20,6 +20,12 @@ protected:
 public:
 	FilterSource(std::unique_ptr<BufferSource> &&source): source(std::move(source)){}
 	virtual ~FilterSource() = 0{}
+	std::unique_ptr<BufferSource> unroll_chain() override{
+		auto temp = this->source->unroll_chain();
+		if (!temp)
+			return std::move(this->source);
+		return temp;
+	}
 };
 
 template <typename T>
@@ -96,7 +102,11 @@ class ResamplingFilter : public FilterSource{
 	int frequency;
 	double ratio;
 	rational_t rational_ratio;
-	boost::optional<rational_t> current_time;
+	struct ExtraInfo{
+		rational_t current_time;
+		std::uint64_t stream_id;
+	};
+	boost::optional<ExtraInfo> extra_info;
 	size_t bytes_per_sample;
 	std::unique_ptr<SRC_STATE, SRC_STATE *(*)(SRC_STATE *)> resampler;
 	audio_buffer_t passed;

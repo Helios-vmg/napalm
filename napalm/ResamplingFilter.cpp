@@ -33,12 +33,13 @@ audio_buffer_t ResamplingFilter::read(){
 	else{
 		ret->sample_count = (size_t)samples;
 
-		assert(this->current_time);
+		assert(this->extra_info);
 		auto &extra_data = get_extra_data<BufferExtraData>(ret);
-		extra_data.timestamp.numerator = this->current_time->numerator();
-		extra_data.timestamp.denominator = this->current_time->denominator();
+		extra_data.timestamp.numerator = this->extra_info->current_time.numerator();
+		extra_data.timestamp.denominator = this->extra_info->current_time.denominator();
+		extra_data.stream_id = this->extra_info->stream_id;
 		extra_data.next = nullptr;
-		*this->current_time += rational_t(ret->sample_count, frequency);
+		this->extra_info->current_time += rational_t(ret->sample_count, frequency);
 	}
 
 	return ret;
@@ -50,9 +51,11 @@ long ResamplingFilter::callback(float *&data){
 		return 0;
 	if (this->passed->sample_count > (size_t)std::numeric_limits<long>::max())
 		throw std::runtime_error("ResamplingFilter overflow");
-	if (!this->current_time){
+	if (!this->extra_info){
+		this->extra_info.emplace();
 		auto &extra_data = get_extra_data<BufferExtraData>(this->passed);
-		this->current_time = rational_t{extra_data.timestamp.numerator, extra_data.timestamp.denominator};
+		this->extra_info->current_time = rational_t{extra_data.timestamp.numerator, extra_data.timestamp.denominator};
+		this->extra_info->stream_id = extra_data.stream_id;
 	}
 	data = (float *)this->passed->data;
 	return (long)this->passed->sample_count;

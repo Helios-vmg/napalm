@@ -7,6 +7,7 @@
 #include <cstring>
 #include "../common/utf8.hpp"
 
+enum NumberFormat;
 typedef boost::rational<std::int64_t> rational_t;
 
 template <typename T>
@@ -102,3 +103,11 @@ constexpr size_t array_length(const T (&)[N]){
 struct AudioFormat;
 typedef struct AudioFormat AudioFormat;
 bool valid_format(const AudioFormat &);
+
+bool operator==(const AudioFormat &a, const AudioFormat &b);
+inline bool operator!=(const AudioFormat &a, const AudioFormat &b){
+	return !(a == b);
+}
+
+std::ostream &operator<<(std::ostream &stream, NumberFormat nf);
+std::ostream &operator<<(std::ostream &, const AudioFormat &);

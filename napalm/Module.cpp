@@ -6,8 +6,8 @@
 
 #define DEFINE_STRING(x) static const char *x##_string = #x
 
-#define GET_REQUIRED_FUNCTION(x) this->x = (x##_f)this->get_function(#x)
-#define GET_OPTIONAL_FUNCTION(x) this->x = (x##_f)this->get_function(#x, false)
+#define GET_MODULE_REQUIRED_FUNCTION(x) this->x = (x##_f)this->get_function(#x)
+#define GET_MODULE_OPTIONAL_FUNCTION(x) this->x = (x##_f)this->get_function(#x, false)
 
 
 DEFINE_STRING(InitModule);
@@ -71,10 +71,10 @@ Module::Module(const std::string &path, system_module_ptr_t &&module, InitModule
 	for (; table->function_name; table++)
 		this->functions[table->function_name] = table->function_pointer;
 	
-	GET_REQUIRED_FUNCTION(get_module_types);
-	GET_OPTIONAL_FUNCTION(get_module_name);
-	GET_OPTIONAL_FUNCTION(get_module_version);
-	GET_REQUIRED_FUNCTION(get_error_message);
+	GET_MODULE_REQUIRED_FUNCTION(get_module_types);
+	GET_MODULE_OPTIONAL_FUNCTION(get_module_name);
+	GET_MODULE_OPTIONAL_FUNCTION(get_module_version);
+	GET_MODULE_REQUIRED_FUNCTION(get_error_message);
 
 	if (this->get_module_name)
 		this->name = this->get_module_name(this->module.get());
