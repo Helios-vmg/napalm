@@ -69,21 +69,24 @@ protected:
 	};
 	std::vector<StreamRange> stream_ranges;
 
-	virtual ReadResult *internal_read(const AudioFormat &) = 0;
+	virtual AudioBuffer *internal_read(const AudioFormat &, size_t extra_data, int substream_index) = 0;
 	std::int64_t time_to_sample(const rational_t &time) const{
 		auto beg = this->stream_ranges.begin();
 		auto end = this->stream_ranges.end();
-		auto it = std::find_if(beg, end, [&time](const StreamRange &sr){ return time >= sr.time_begin; });
-		if (it == end)
-			return -1;
+		auto it = std::find_if(beg, end, [&time](const StreamRange &sr){ return sr.time_begin + sr.time_length >= time; });
+		if (it == end){
+			it = beg + (end - beg - 1);
+			if (!(it->time_begin <= time && time < it->time_begin + it->time_length))
+				return -1;
+		}
 		auto conv = (time - it->time_begin) * it->frequency;
 		return it->sample_begin + conv.numerator() / conv.denominator();
 	}
 public:
 	Decoder(const ExternalIO &io): io(io){}
 	virtual ~Decoder(){}
-	ReadResult *read(const AudioFormat &af){
-		auto ret = this->internal_read(af);
+	AudioBuffer *read(const AudioFormat &af, size_t extra_data, int substream_index){
+		auto ret = this->internal_read(af, extra_data, substream_index);
 		if (!ret)
 			return ret;
 		this->position += ret->sample_count;
@@ -172,13 +175,13 @@ public:
 		}
 		return ret;
 	}
-	virtual ReadResult *read(){
+	virtual AudioBuffer *read(size_t extra_data){
 		if (this->position >= this->length)
 			return nullptr;
 		auto sample = this->position + this->first_sample;
 		if (this->parent.seek_to_sample(sample, false) != sample)
 			return nullptr;
-		auto ret = this->parent.read(this->format);
+		auto ret = this->parent.read(this->format, extra_data, this->index);
 		if (!ret)
 			return nullptr;
 		if ((std::uint64_t)ret->sample_count > this->length - this->position)

@@ -101,7 +101,7 @@ inline size_t sizeof_NumberFormat(NumberFormat nf){
 
 #endif
 
-typedef struct{
+typedef struct AudioFormat{
 	NumberFormat format;
 	int channels;
 	int freq;

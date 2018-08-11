@@ -21,8 +21,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BFAFC97D-2530-46A5-AFFA-2CB445DFC273}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>modular_player</RootNamespace>
+    <RootNamespace>napalm</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>napalm</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -91,7 +92,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>BUILDING_MODULAR_PLAYER;WIN32;_DEBUG;_WINDOWS;_USRDLL;MODULAR_PLAYER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILDING_NAPALM;WIN32;_DEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -108,7 +109,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>BUILDING_MODULAR_PLAYER;_DEBUG;_WINDOWS;_USRDLL;MODULAR_PLAYER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILDING_NAPALM;_DEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -127,7 +128,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>BUILDING_MODULAR_PLAYER;WIN32;NDEBUG;_WINDOWS;_USRDLL;MODULAR_PLAYER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILDING_NAPALM;WIN32;NDEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -148,7 +149,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>BUILDING_MODULAR_PLAYER;NDEBUG;_WINDOWS;_USRDLL;MODULAR_PLAYER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILDING_NAPALM;NDEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -168,27 +169,30 @@
     <ClInclude Include="..\common\external_io.h" />
     <ClInclude Include="..\common\GenericMetadata.hpp" />
     <ClInclude Include="..\common\module.h" />
+    <ClInclude Include="..\common\output_module.h" />
     <ClInclude Include="..\common\WrappedExternalIO.hpp" />
-    <ClInclude Include="AudioBuffer.h" />
     <ClInclude Include="BufferSource.h" />
     <ClInclude Include="Decoder.h" />
     <ClInclude Include="Filter.h" />
     <ClInclude Include="InputStream.h" />
     <ClInclude Include="Module.h" />
+    <ClInclude Include="OutputModule.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Threads.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AudioBuffer.cpp" />
     <ClCompile Include="Decoder.cpp" />
     <ClCompile Include="ChannelMixerFilter.cpp" />
     <ClCompile Include="Filter.cpp" />
     <ClCompile Include="InputStream.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Module.cpp" />
+    <ClCompile Include="OutputModule.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="ResamplingFilter.cpp" />
     <ClCompile Include="SampleConverterFilter.cpp" />
+    <ClCompile Include="Threads.cpp" />
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

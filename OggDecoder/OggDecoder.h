@@ -14,9 +14,9 @@ class OggDecoder : public Decoder{
 	int stream_count;
 	std::int64_t time_resolution;
 
-	ReadResult *internal_read(const AudioFormat &) override;
+	AudioBuffer *internal_read(const AudioFormat &, size_t extra_data, int substream_index) override;
 	void init_time_resolution();
-	int ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, size_t &samples);
+	int ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, size_t &samples, int substream_index);
 public:
 	OggDecoder(const char *path, const ExternalIO &io, Module *module);
 	~OggDecoder();
@@ -57,4 +57,4 @@ public:
 	void set_number_format_hint(NumberFormat nf);
 };
 
-void release(ReadResult *);
+void release(AudioBuffer *);

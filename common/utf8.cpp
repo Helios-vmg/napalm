@@ -1,5 +1,4 @@
-#include "utility.h"
-#include "../common/audio_format.h"
+#include "utf8.hpp"
 
 std::wstring utf8_to_string(const std::string &src){
 	std::wstring ret;

@@ -11,7 +11,7 @@ protected:
 public:
 	TrueFilter(const AudioFormat &af);
 	virtual ~TrueFilter(){}
-	virtual read_buffer_t apply(read_buffer_t &&) = 0;
+	virtual audio_buffer_t apply(audio_buffer_t &&) = 0;
 };
 
 class FilterSource : public BufferSource{
@@ -30,7 +30,7 @@ public:
 	GenericFilterSource(std::unique_ptr<BufferSource> &&source, Args &&... args):
 		FilterSource(std::move(source)),
 		filter(std::forward<Args>(args)...){}
-	read_buffer_t read() override{
+	audio_buffer_t read() override{
 		auto buffer = this->source->read();
 		if (!buffer)
 			return buffer;
@@ -40,22 +40,22 @@ public:
 
 class ChannelMixerFilter : public TrueFilter{
 	int channels;
-	typedef read_buffer_t (*f)(read_buffer_t &&, size_t);
+	typedef audio_buffer_t (*f)(audio_buffer_t &&, size_t);
 	f converter;
 	size_t bytes_per_dest_sample;
 public:
 	ChannelMixerFilter(const AudioFormat &af, int target_channels);
-	read_buffer_t apply(read_buffer_t &&);
+	audio_buffer_t apply(audio_buffer_t &&);
 };
 
 class SampleConverterFilter : public TrueFilter{
 	NumberFormat type;
 	size_t bytes_per_dest_sample;
-	typedef read_buffer_t (*f)(read_buffer_t &&, size_t, size_t);
+	typedef audio_buffer_t (*f)(audio_buffer_t &&, size_t, size_t);
 	f converter;
 public:
 	SampleConverterFilter(const AudioFormat &af, NumberFormat type);
-	read_buffer_t apply(read_buffer_t &&);
+	audio_buffer_t apply(audio_buffer_t &&);
 };
 
 typedef GenericFilterSource<ChannelMixerFilter> ChannelMixerFilterSource;
@@ -95,9 +95,11 @@ class ResamplingFilter : public FilterSource{
 	AudioFormat source_filter;
 	int frequency;
 	double ratio;
+	rational_t rational_ratio;
+	boost::optional<rational_t> current_time;
 	size_t bytes_per_sample;
 	std::unique_ptr<SRC_STATE, SRC_STATE *(*)(SRC_STATE *)> resampler;
-	read_buffer_t passed;
+	audio_buffer_t passed;
 
 	static long samplerate_callback(void *cb_data, float **data){
 		return ((ResamplingFilter *)cb_data)->callback(*data);
@@ -105,7 +107,7 @@ class ResamplingFilter : public FilterSource{
 	long callback(float *&data);
 public:
 	ResamplingFilter(std::unique_ptr<BufferSource> &&, const AudioFormat &af, int frequency, ResamplerPreset preset = ResamplerPreset::SincBestQuality);
-	read_buffer_t read() override;
+	audio_buffer_t read() override;
 };
 
-std::unique_ptr<BufferSource> build_filter_chain(std::unique_ptr<BufferSource> &&source, const AudioFormat &saf, const AudioFormat &daf);
+std::unique_ptr<BufferSource> build_filter_chain(std::unique_ptr<BufferSource> &&source, const AudioFormat &saf, const AudioFormat &daf, ResamplerPreset preset = ResamplerPreset::SincBestQuality);

@@ -2,25 +2,33 @@
 #include "Module.h"
 #include "../common/decoder_module.h"
 
-#define GET_REQUIRED_FUNCTION(x) this->x = (x##_f)this->module->get_function(#x)
-#define GET_OPTIONAL_FUNCTION(x) this->x = (x##_f)this->module->get_function(#x, false)
-
-void release_buffer(ReadResult *rr){
+void release_buffer(AudioBuffer *rr){
 	if (rr)
-		free(rr->opaque);
+		rr->release_function(rr->opaque);
 }
 
-read_buffer_t allocate_buffer(size_t byte_size){
-	auto ret = (ReadResult *)malloc(sizeof(ReadResult) + byte_size);
+audio_buffer_t allocate_buffer(size_t byte_size, size_t extra_data){
+	auto ret = (AudioBuffer *)malloc(sizeof(AudioBuffer) + byte_size + extra_data);
+	if (!ret)
+		throw std::bad_alloc();
 	ret->opaque = ret;
-	return read_buffer_t(ret, release_buffer);
+	ret->release_function = free;
+	ret->samples_size = byte_size;
+	ret->extra_data_size = extra_data;
+	return audio_buffer_t(ret, release_buffer);
+}
+
+audio_buffer_t allocate_buffer_by_clone(const audio_buffer_t &src, size_t byte_size){
+	auto ret = allocate_buffer(byte_size, src->extra_data_size);
+	if (src->extra_data_size)
+		memcpy(ret->data + ret->samples_size, src->data + src->samples_size, src->extra_data_size);
+	return ret;
 }
 
 DecoderModule::DecoderModule(const std::shared_ptr<Module> &module): module(module){
 	GET_REQUIRED_FUNCTION(decoder_get_supported_extensions);
 	GET_REQUIRED_FUNCTION(decoder_open);
 	GET_REQUIRED_FUNCTION(decoder_close);
-	GET_REQUIRED_FUNCTION(decoder_release_ReadResult);
 	GET_REQUIRED_FUNCTION(decoder_get_substreams_count);
 	GET_REQUIRED_FUNCTION(decoder_get_substream);
 	GET_REQUIRED_FUNCTION(substream_close);
@@ -75,7 +83,9 @@ DecoderSubstream::DecoderSubstream(Decoder &decoder, int index):
 }
 
 AudioFormat DecoderSubstream::get_audio_format(){
-	return this->module.substream_get_audio_format(this->substream_ptr.get());
+	if (!this->format)
+		this->format = this->module.substream_get_audio_format(this->substream_ptr.get());
+	return *this->format;
 }
 
 void DecoderSubstream::set_number_format_hint(NumberFormat nf){
@@ -84,8 +94,22 @@ void DecoderSubstream::set_number_format_hint(NumberFormat nf){
 		f(this->substream_ptr.get(), nf);
 }
 
-std::unique_ptr<ReadResult, decoder_release_ReadResult_f> DecoderSubstream::read(){
-	return std::unique_ptr<ReadResult, decoder_release_ReadResult_f>(this->module.substream_read(this->substream_ptr.get()), this->module.decoder_release_ReadResult);
+audio_buffer_t DecoderSubstream::read(){
+	auto freq = this->get_audio_format().freq;
+	auto buffer = this->module.substream_read(this->substream_ptr.get(), sizeof(BufferExtraData));
+	auto ret = audio_buffer_t{buffer, release_buffer};
+	if (!buffer)
+		return ret;
+	if (!buffer->release_function)
+		throw std::runtime_error("Invalid buffer.");
+
+	auto &extra_data = get_extra_data<BufferExtraData>(ret);
+	extra_data.timestamp.numerator = this->current_time.numerator();
+	extra_data.timestamp.denominator = this->current_time.denominator();
+	extra_data.next = nullptr;
+	this->current_time += rational_t(ret->sample_count, freq);
+
+	return ret;
 }
 
 rational_t to_rational(const RationalValue &r){
@@ -114,12 +138,16 @@ std::int64_t DecoderSubstream::seek_to_sample(std::int64_t sample, bool fast){
 	auto f = this->module.substream_seek_to_sample;
 	if (!f)
 		return -1;
-	return f(this->substream_ptr.get(), sample, fast);
+	auto ret = f(this->substream_ptr.get(), sample, fast);
+	auto freq = this->get_audio_format().freq;
+	this->current_time = {ret, freq};
+	return ret;
 }
 
 rational_t DecoderSubstream::seek_to_second(const rational_t &time, bool fast){
 	auto f = this->module.substream_seek_to_second;
 	if (!f)
 		return -1;
-	return to_rational(f(this->substream_ptr.get(), to_RationalValue(time), fast));
+	auto ret = to_rational(f(this->substream_ptr.get(), to_RationalValue(time), fast));
+	return this->current_time = ret;
 }

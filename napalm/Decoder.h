@@ -1,6 +1,5 @@
 #pragma once
 
-#include "AudioBuffer.h"
 #include "InputStream.h"
 #include "Module.h"
 #include "BufferSource.h"
@@ -8,9 +7,16 @@
 #include <memory>
 #include <unordered_set>
 #include <string>
+#include <boost/optional.hpp>
 
 class InputStream;
 class DecoderSubstream;
+
+struct BufferExtraData{
+	RationalValue timestamp;
+	AudioBuffer *next;
+	size_t sample_offset;
+};
 
 class DecoderModule{
 	friend class Decoder;
@@ -21,7 +27,6 @@ class DecoderModule{
 	DEFINE_FP(decoder_get_supported_extensions);
 	DEFINE_FP(decoder_open);
 	DEFINE_FP(decoder_close);
-	DEFINE_FP(decoder_release_ReadResult);
 	DEFINE_FP(decoder_get_substreams_count);
 	DEFINE_FP(decoder_get_substream);
 	DEFINE_FP(substream_close);
@@ -57,17 +62,32 @@ class DecoderSubstream : public BufferSource{
 	friend class Decoder;
 	DecoderModule &module;
 	std::unique_ptr<std::remove_pointer<DecoderSubstreamPtr>::type, substream_close_f> substream_ptr;
+	boost::optional<AudioFormat> format;
+	rational_t current_time = {0, 1};
 	
 	DecoderSubstream(Decoder &decoder, int index);
 public:
 	AudioFormat get_audio_format();
 	void set_number_format_hint(NumberFormat);
-	read_buffer_t read();
+	audio_buffer_t read() override;
 	rational_t get_length_in_seconds();
 	std::uint64_t get_length_in_samples();
 	std::int64_t seek_to_sample(std::int64_t sample, bool fast);
 	rational_t seek_to_second(const rational_t &time, bool fast);
 };
 
-void release_buffer(ReadResult *rr);
-read_buffer_t allocate_buffer(size_t byte_size);
+void release_buffer(AudioBuffer *rr);
+audio_buffer_t allocate_buffer(size_t byte_size, size_t extra_data);
+audio_buffer_t allocate_buffer_by_clone(const audio_buffer_t &, size_t byte_size = 0);
+
+template <typename T>
+T &get_extra_data(AudioBuffer *buffer){
+	if (sizeof(T) > buffer->extra_data_size)
+		throw std::exception();
+	return *(T *)(buffer->data + buffer->samples_size);
+}
+
+template <typename T>
+T &get_extra_data(audio_buffer_t &buffer){
+	return get_extra_data<T>(buffer.get());
+}

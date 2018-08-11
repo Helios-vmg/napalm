@@ -24,9 +24,6 @@
     <ClInclude Include="Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AudioBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Decoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -66,11 +63,17 @@
     <ClInclude Include="BufferSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\output_module.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="OutputModule.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Threads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AudioBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Decoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -100,6 +103,12 @@
     </ClCompile>
     <ClCompile Include="SampleConverterFilter.cpp">
       <Filter>Source Files\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="OutputModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Threads.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

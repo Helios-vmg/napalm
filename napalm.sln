@@ -3,9 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "modular_player", "modular_player\modular_player.vcxproj", "{BFAFC97D-2530-46A5-AFFA-2CB445DFC273}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "napalm", "napalm\napalm.vcxproj", "{BFAFC97D-2530-46A5-AFFA-2CB445DFC273}"
 	ProjectSection(ProjectDependencies) = postProject
 		{21014F01-8662-4383-981E-4F6232F93B0A} = {21014F01-8662-4383-981E-4F6232F93B0A}
+		{6E439C1A-20F9-401A-850D-300EE0325106} = {6E439C1A-20F9-401A-850D-300EE0325106}
 		{D3459F9A-20AF-4094-BF84-D85AF3C64AE5} = {D3459F9A-20AF-4094-BF84-D85AF3C64AE5}
 	EndProjectSection
 EndProject
@@ -31,6 +32,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{D627D582-F5F3-49CD-9A63-495BC4B26278}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "conversion_generator", "misc\conversion_generator\conversion_generator.vcxproj", "{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WasapiOutput", "WasapiOutput\WasapiOutput.vcxproj", "{6E439C1A-20F9-401A-850D-300EE0325106}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,6 +99,14 @@ Global
 		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x64.Build.0 = Release|x64
 		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x86.ActiveCfg = Release|Win32
 		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x86.Build.0 = Release|Win32
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Debug|x64.ActiveCfg = Debug|x64
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Debug|x64.Build.0 = Debug|x64
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Debug|x86.ActiveCfg = Debug|Win32
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Debug|x86.Build.0 = Debug|Win32
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Release|x64.ActiveCfg = Release|x64
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Release|x64.Build.0 = Release|x64
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Release|x86.ActiveCfg = Release|Win32
+		{6E439C1A-20F9-401A-850D-300EE0325106}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -107,5 +118,6 @@ Global
 		{C3C2A226-B11D-4243-BEF6-8B2C5779C3B4} = {D45D0839-291D-4DDE-AFE3-D62E562CBC36}
 		{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235} = {D45D0839-291D-4DDE-AFE3-D62E562CBC36}
 		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07} = {D627D582-F5F3-49CD-9A63-495BC4B26278}
+		{6E439C1A-20F9-401A-850D-300EE0325106} = {43C5463B-DD6D-4961-891C-2C74A5337807}
 	EndGlobalSection
 EndGlobal

@@ -1,7 +1,7 @@
 #include "../common/decoder_module.h"
 #include "OggDecoder.h"
 
-#ifdef WIN32
+#if defined WIN32 || defined WIN64
 #define EXPORT extern "C" __declspec(dllexport)
 #else
 #define EXPORT extern "C"
@@ -63,10 +63,6 @@ static void decoder_close(DecoderPtr instance){
 	delete (OggDecoder *)instance;
 }
 
-static void decoder_release_ReadResult(ReadResult *p){
-	release(p);
-}
-
 static int decoder_get_substreams_count(DecoderPtr instance){
 	auto &decoder = *(OggDecoder *)instance;
 	auto &module = decoder.get_module();
@@ -116,11 +112,11 @@ void substream_set_number_format_hint(DecoderSubstreamPtr instance, NumberFormat
 	}
 }
 
-static ReadResult *substream_read(DecoderSubstreamPtr instance){
+static AudioBuffer *substream_read(DecoderSubstreamPtr instance, size_t extra_data){
 	auto &substream = *(OggDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
-		return substream.read();
+		return substream.read(extra_data);
 	}catch (std::exception &e){
 		module.set_error(e.what());
 	}
@@ -183,7 +179,6 @@ EXPORT const ModuleExportEntry *GetFunctionTable(ModulePtr){
 		EXPORT_MODULE_FUNCTION(decoder_get_supported_extensions),
 		EXPORT_MODULE_FUNCTION(decoder_open),
 		EXPORT_MODULE_FUNCTION(decoder_close),
-		EXPORT_MODULE_FUNCTION(decoder_release_ReadResult),
 		EXPORT_MODULE_FUNCTION(decoder_get_substreams_count),
 		EXPORT_MODULE_FUNCTION(decoder_get_substream),
 		EXPORT_MODULE_FUNCTION(substream_close),

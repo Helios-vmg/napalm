@@ -5,7 +5,7 @@ TrueFilter::TrueFilter(const AudioFormat &af): source_format(af){
 	this->bytes_per_source_sample = this->source_format.channels * sizeof_NumberFormat(this->source_format.format);
 }
 
-std::unique_ptr<BufferSource> build_filter_chain(std::unique_ptr<BufferSource> &&source, const AudioFormat &saf, const AudioFormat &daf){
+std::unique_ptr<BufferSource> build_filter_chain(std::unique_ptr<BufferSource> &&source, const AudioFormat &saf, const AudioFormat &daf, ResamplerPreset preset){
 	auto f = saf;
 	auto ret = std::move(source);
 	if (f.format != daf.format && f.freq == daf.freq){
@@ -21,7 +21,7 @@ std::unique_ptr<BufferSource> build_filter_chain(std::unique_ptr<BufferSource> &
 			ret = std::make_unique<SampleConverterFilterSource>(std::move(ret), f, Float32);
 			f.format = Float32;
 		}
-		ret = std::make_unique<ResamplingFilter>(std::move(ret), f, daf.freq, ResamplerPreset::SincBestQuality);
+		ret = std::make_unique<ResamplingFilter>(std::move(ret), f, daf.freq, preset);
 		f.freq = daf.freq;
 		f.format = Float32;
 	}

@@ -67,7 +67,7 @@ OggDecoderSubstream::OggDecoderSubstream(
 		stream << "Failed to read Ogg Vorbis stream info for stream index " << this->index;
 		throw std::runtime_error(stream.str());
 	}
-	this->format.format = number_format;
+	this->format.format = Float32;
 	this->format.channels = info->channels;
 	this->format.freq = info->rate;
 	vorbis_comment *comment = ov_comment(ogg_file, this->index);
@@ -132,30 +132,35 @@ static const char *ogg_code_to_string(int e){
 	}
 }
 
-struct OggReadResult{
-	ReadResult read_result;
+struct OggAudioBuffer{
+	AudioBuffer read_result;
 };
 
-OggReadResult *alloc(size_t extra_size){
-	auto ret = (OggReadResult *)malloc(sizeof(OggReadResult) + extra_size);
+void release(OggAudioBuffer *rr){
+	if (rr)
+		rr->read_result.release_function(rr->read_result.opaque);
+}
+
+std::unique_ptr<OggAudioBuffer, void (*)(OggAudioBuffer *)> alloc(size_t extra_size, size_t extra_data){
+	auto ret = (OggAudioBuffer *)malloc(sizeof(OggAudioBuffer) + extra_size + extra_data);
 	if (!ret)
 		throw std::bad_alloc();
 	ret->read_result.opaque = ret;
-	return ret;
+	ret->read_result.release_function = free;
+	ret->read_result.samples_size = extra_size;
+	ret->read_result.extra_data_size = extra_data;
+	return {ret, release};
 }
 
-void release(ReadResult *rr){
-	if (rr)
-		free(rr->opaque);
-}
-
-int OggDecoder::ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, size_t &samples){
-	int ignored;
+int OggDecoder::ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, size_t &samples, int substream_index){
+	int substream;
 	if (af.format == Float32){
 		float **temp;
-		int ret = ::ov_read_float(&this->ogg_file, &temp, samples, &ignored);
+		int ret = ::ov_read_float(&this->ogg_file, &temp, samples, &substream);
 		if (ret <= 0)
 			return ret;
+		if (substream != substream_index)
+			return 0;
 		auto rsamples = ret;
 		for (size_t c = 0; c < af.channels; c++){
 			auto fdst = (float *)dst + c;
@@ -164,37 +169,34 @@ int OggDecoder::ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, s
 				*fdst = fsrc[s];
 		}
 		samples -= rsamples;
-		return ret * sizeof(float);
+		return ret * sizeof(float) * af.channels;
 	}
 
 	int word = (af.format - 1) % 4 + 1,
 		signedness = af.format > IntU32;
-	int ret = ::ov_read(&this->ogg_file, (char *)dst, (int)size, false, word, signedness, &ignored);
+	int ret = ::ov_read(&this->ogg_file, (char *)dst, (int)size, false, word, signedness, &substream);
 	if (ret <= 0)
 		return ret;
 	samples -= ret / word;
 	return ret;
 }
 
-ReadResult *OggDecoder::internal_read(const AudioFormat &af){
+AudioBuffer *OggDecoder::internal_read(const AudioFormat &af, size_t extra_data, int substream_index){
 	size_t bytes_per_sample = af.channels * sizeof_NumberFormat(af.format);
 	size_t samples_to_read = 1024 * 16;
 	size_t bytes_to_read = samples_to_read * bytes_per_sample;
 
-	auto ret = alloc(bytes_to_read);
+	auto ret = alloc(bytes_to_read, extra_data);
 
 	size_t size = 0;
 	while (size < bytes_to_read){
-		int r = this->ov_read(af, ret->read_result.data + size, bytes_to_read - size, samples_to_read);
+		int r = this->ov_read(af, ret->read_result.data + size, bytes_to_read - size, samples_to_read, substream_index);
 		if (r < 0){
-			release(&ret->read_result);
 			throw std::runtime_error((std::string)"OggDecoder: " + ogg_code_to_string(r));
 		}
 		if (!r){
-			if (!size){
-				release(&ret->read_result);
+			if (!size)
 				return nullptr;
-			}
 			break;
 		}
 
@@ -202,7 +204,7 @@ ReadResult *OggDecoder::internal_read(const AudioFormat &af){
 	}
 	ret->read_result.sample_count = size / bytes_per_sample;
 		
-	return &ret->read_result;
+	return &ret.release()->read_result;
 }
 
 std::int64_t OggDecoder::seek_to_sample(std::int64_t pos, bool fast){

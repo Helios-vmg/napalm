@@ -7,6 +7,8 @@
 #include <unordered_set>
 
 #define DEFINE_FP(x) x##_f x
+#define GET_REQUIRED_FUNCTION(x) this->x = (x##_f)this->module->get_function(#x)
+#define GET_OPTIONAL_FUNCTION(x) this->x = (x##_f)this->module->get_function(#x, false)
 
 class Module{
 	std::string path;

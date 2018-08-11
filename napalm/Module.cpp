@@ -111,7 +111,7 @@ GenericFunctionPtr Module::get_function(const char *name, bool required) const{
 }
 
 void Module::check_error(){
-	auto error = this->get_module_name(this->module.get());
+	auto error = this->get_error_message(this->module.get());
 	if (error)
 		throw std::runtime_error(error);
 }

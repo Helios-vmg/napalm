@@ -5,7 +5,7 @@
 #include "audio_format.h"
 #include <stdint.h>
 
-//Module type: decoder
+#define DECODER_MODULE_TYPE "decoder"
 
 typedef void *DecoderPtr;
 typedef void *DecoderSubstreamPtr;
@@ -13,9 +13,12 @@ typedef void *DecoderSubstreamPtr;
 //Variable length struct.
 typedef struct{
 	void *opaque;
+	void (*release_function)(void *);
 	size_t sample_count;
+	size_t samples_size;
+	size_t extra_data_size;
 	uint8_t data[1];
-} ReadResult;
+} AudioBuffer;
 
 typedef struct{
 	int64_t numerator;
@@ -33,9 +36,6 @@ typedef DecoderPtr (*decoder_open_f)(ModulePtr, const char *, const ExternalIO *
 //decoder_close (required)
 typedef void (*decoder_close_f)(DecoderPtr);
 
-//decoder_release_ReadResult (required)
-typedef void (*decoder_release_ReadResult_f)(ReadResult *);
-
 //decoder_get_substreams_count (optional)
 typedef int (*decoder_get_substreams_count_f)(DecoderPtr);
 
@@ -52,7 +52,7 @@ typedef AudioFormat (*substream_get_audio_format_f)(DecoderSubstreamPtr);
 typedef void (*substream_set_number_format_hint_f)(DecoderSubstreamPtr, NumberFormat);
 
 //substream_read (required)
-typedef ReadResult *(*substream_read_f)(DecoderSubstreamPtr);
+typedef AudioBuffer *(*substream_read_f)(DecoderSubstreamPtr, size_t extra_data);
 
 //substream_get_length_in_seconds (optional)
 typedef RationalValue (*substream_get_length_in_seconds_f)(DecoderSubstreamPtr);

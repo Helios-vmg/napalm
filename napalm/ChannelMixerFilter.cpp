@@ -43,7 +43,7 @@ template <int N, bool B>
 struct channel_mixer{
 	typedef typename type_selector<N, B>::type T;
 	typedef typename type_selector<N, B>::type2 T2;
-	static read_buffer_t f(read_buffer_t &&buffer, size_t bytes_per_sample){
+	static audio_buffer_t f(audio_buffer_t &&buffer, size_t bytes_per_sample){
 		auto src = (T *)buffer->data;
 		auto dst = (T *)buffer->data;
 		auto n = buffer->sample_count;
@@ -59,7 +59,7 @@ template <bool B>
 struct channel_mixer<3, B>{
 	typedef typename type_selector<3, B>::type T;
 	typedef typename type_selector<3, B>::type2 T2;
-	static read_buffer_t f(read_buffer_t &&buffer, size_t bytes_per_sample){
+	static audio_buffer_t f(audio_buffer_t &&buffer, size_t bytes_per_sample){
 		auto src = buffer->data;
 		auto dst = buffer->data;
 		auto n = buffer->sample_count;
@@ -77,7 +77,7 @@ struct channel_mixer<3, B>{
 
 template <typename T>
 struct channel_mixer_f{
-	static read_buffer_t f(read_buffer_t &&buffer, size_t bytes_per_sample){
+	static audio_buffer_t f(audio_buffer_t &&buffer, size_t bytes_per_sample){
 		auto src = (T *)buffer->data;
 		auto dst = (T *)buffer->data;
 		auto n = buffer->sample_count;
@@ -93,9 +93,9 @@ template <int N, bool B>
 struct channel_doubler{
 	typedef typename type_selector<N, B>::type T;
 	typedef typename type_selector<N, B>::type2 T2;
-	static read_buffer_t f(read_buffer_t &&buffer, size_t bytes_per_sample){
+	static audio_buffer_t f(audio_buffer_t &&buffer, size_t bytes_per_sample){
 		auto n = buffer->sample_count;
-		read_buffer_t ret = allocate_buffer(n * bytes_per_sample);
+		audio_buffer_t ret = allocate_buffer_by_clone(buffer, n * bytes_per_sample);
 		ret->sample_count = n;
 		auto src = (T *)buffer->data;
 		auto dst = (T *)ret->data;
@@ -111,9 +111,9 @@ template <bool B>
 struct channel_doubler<3, B>{
 	typedef typename type_selector<3, B>::type T;
 	typedef typename type_selector<3, B>::type2 T2;
-	static read_buffer_t f(read_buffer_t &&buffer, size_t bytes_per_sample){
+	static audio_buffer_t f(audio_buffer_t &&buffer, size_t bytes_per_sample){
 		auto n = buffer->sample_count;
-		read_buffer_t ret = allocate_buffer(n * bytes_per_sample);
+		audio_buffer_t ret = allocate_buffer_by_clone(buffer, n * bytes_per_sample);
 		ret->sample_count = n;
 		auto src = buffer->data;
 		auto dst = ret->data;
@@ -131,9 +131,9 @@ struct channel_doubler<3, B>{
 
 template <typename T>
 struct channel_doubler_f{
-	static read_buffer_t f(read_buffer_t &&buffer, size_t bytes_per_sample){
+	static audio_buffer_t f(audio_buffer_t &&buffer, size_t bytes_per_sample){
 		auto n = buffer->sample_count;
-		read_buffer_t ret = allocate_buffer(n * bytes_per_sample);
+		audio_buffer_t ret = allocate_buffer_by_clone(buffer, n * bytes_per_sample);
 		ret->sample_count = n;
 		auto src = (T *)buffer->data;
 		auto dst = (T *)ret->data;
@@ -208,6 +208,6 @@ ChannelMixerFilter::ChannelMixerFilter(const AudioFormat &af, int target_channel
 	}
 }
 
-read_buffer_t ChannelMixerFilter::apply(read_buffer_t &&buffer){
+audio_buffer_t ChannelMixerFilter::apply(audio_buffer_t &&buffer){
 	return this->converter(std::move(buffer), this->bytes_per_dest_sample);
 }

@@ -1,10 +1,7 @@
 #pragma once
 
-#include <boost/rational.hpp>
 #include <string>
 #include <cstdint>
-
-typedef boost::rational<std::int64_t> rational_t;
 
 template <typename T>
 void utf8_to_string(std::basic_string<T> &dst, const std::uint8_t *buffer, size_t n){
@@ -99,49 +96,6 @@ void string_to_utf8(std::string &dst, const std::basic_string<T> &src){
 		while (temp_size)
 			*(pointer++) = temp[--temp_size];
 	}
-}
-
-template <typename T, typename F>
-bool glob_implementation(const T *pattern, const T *string, F f, bool ignore_f){
-glob_start:
-	if (!*pattern && !*string)
-		return 1;
-	switch (*pattern){
-		case '*':
-			while (1){
-				if (glob(pattern + 1, string, f))
-					return 1;
-				if (!*string)
-					return 0;
-				string++;
-			}
-		case '?':
-			pattern++;
-			string++;
-			goto glob_start;
-		default:
-			if (ignore_f && *pattern == *string || !ignore_f && f(*pattern) == f(*string)){
-				pattern++;
-				string++;
-				goto glob_start;
-			}
-			return 0;
-	}
-}
-
-template <typename T, typename F>
-bool glob(const T *pattern, const T *string){
-	return glob_implementation(pattern, string, nullptr, true);
-}
-
-template <typename T, typename F>
-bool glob(const T *pattern, const T *string, F f){
-	return glob_implementation(pattern, string, f, false);
-}
-
-template <typename T, size_t N>
-constexpr size_t array_length(const T (&)[N]){
-	return N;
 }
 
 std::wstring utf8_to_string(const std::string &src);

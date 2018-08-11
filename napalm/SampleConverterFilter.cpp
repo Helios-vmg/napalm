@@ -210,18 +210,18 @@ struct writer<Float64>{
 
 template <NumberFormat Src, NumberFormat Dst>
 struct sample_converter{
-	static read_buffer_t f(read_buffer_t &&buffer, size_t bytes_per_sample2, size_t channels){
-		read_buffer_t ret(nullptr, release_buffer);
+	static audio_buffer_t f(audio_buffer_t &&buffer, size_t bytes_per_sample2, size_t channels){
+		audio_buffer_t ret(nullptr, release_buffer);
 		std::uint8_t *dst;
 
 		const std::uint8_t *src = buffer->data;
 		bool b = sizeof_NumberFormat(Src) < sizeof_NumberFormat(Dst);
 
 		if (b){
-			ret = allocate_buffer(buffer->sample_count * bytes_per_sample2);
+			ret = allocate_buffer_by_clone(buffer, buffer->sample_count * bytes_per_sample2);
 			ret->sample_count = buffer->sample_count;
 			dst = ret->data;
-		} else
+		}else
 			dst = buffer->data;
 
 		auto elements = buffer->sample_count * channels;
@@ -234,7 +234,7 @@ struct sample_converter{
 	}
 };
 
-typedef read_buffer_t(*converter_f)(read_buffer_t &&, size_t, size_t);
+typedef audio_buffer_t(*converter_f)(audio_buffer_t &&, size_t, size_t);
 
 template <NumberFormat Src, NumberFormat Dst>
 struct loop{
@@ -284,6 +284,6 @@ SampleConverterFilter::SampleConverterFilter(const AudioFormat &af, NumberFormat
 		throw std::runtime_error("Unsupported format conversion.");
 }
 
-read_buffer_t SampleConverterFilter::apply(read_buffer_t &&buffer){
+audio_buffer_t SampleConverterFilter::apply(audio_buffer_t &&buffer){
 	return this->converter(std::move(buffer), this->bytes_per_dest_sample, this->source_format.channels);
 }
