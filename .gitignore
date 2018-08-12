@@ -17,3 +17,4 @@ bin/
 /include
 *.db
 *.opendb
+bin64/

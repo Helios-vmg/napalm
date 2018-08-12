@@ -14,6 +14,8 @@ Player::Player(): queue(this->final_format){
 }
 
 void Player::load_file(const char *path){
+	if (!decoders.size())
+		throw std::runtime_error((std::string)"No decoders to load file " + path);
 	this->decoder = this->decoders.front()->open(std::make_unique<StdInputStream>(path));
 }
 

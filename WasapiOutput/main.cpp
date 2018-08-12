@@ -2,7 +2,7 @@
 #include "../common/output.hpp"
 #include "WasapiOutput.h"
 
-#if defined WIN32 || defined WIN64
+#if defined WIN32 || defined _WIN32 || defined _WIN64
 #define EXPORT extern "C" __declspec(dllexport)
 #else
 #define EXPORT extern "C"

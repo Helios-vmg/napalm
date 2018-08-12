@@ -156,7 +156,7 @@ int OggDecoder::ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, s
 	int substream;
 	if (af.format == Float32){
 		float **temp;
-		int ret = ::ov_read_float(&this->ogg_file, &temp, samples, &substream);
+		int ret = ::ov_read_float(&this->ogg_file, &temp, (int)samples, &substream);
 		if (ret <= 0)
 			return ret;
 		if (substream != substream_index)
