@@ -10,9 +10,9 @@
 class Player;
 
 class Player{
-	std::unique_ptr<BufferSource> now_playing;
 	std::vector<std::unique_ptr<DecoderModule>> decoders;
 	std::vector<std::unique_ptr<OutputModule>> outputs;
+	std::unique_ptr<BufferSource> now_playing;
 	std::map<uniqueid_t, std::shared_ptr<OutputDevice>> devices;
 	std::shared_ptr<Decoder> decoder;
 	std::shared_ptr<OutputDevice> output_device;
