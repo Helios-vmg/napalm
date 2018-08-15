@@ -3,7 +3,7 @@
 #include "../common/sha256.hpp"
 #include <sstream>
 #include <avrt.h>
-#include <iostream>
+//#include <iostream>
 
 WasapiOutput::WasapiOutput(){}
 
@@ -56,8 +56,17 @@ void WasapiOutput::init_device_list(){
 	if (SUCCEEDED(result))
 		this->com_initialized = true;
 	else{
-		if (result != CO_E_ALREADYINITIALIZED)
-			throw std::runtime_error("COM initialization failed: " + to_string(result));
+		if (result != CO_E_ALREADYINITIALIZED){
+			if (result == RPC_E_CHANGED_MODE){
+				APTTYPE type;
+				APTTYPEQUALIFIER qualifier;
+				result = CoGetApartmentType(&type, &qualifier);
+				if (!SUCCEEDED(result))
+					throw std::runtime_error("COM initialization failed: " + to_string(result));
+				//type = qualifier;
+			}else
+				throw std::runtime_error("COM initialization failed: " + to_string(result));
+		}
 	}
 
     IMMDeviceEnumerator *device_enumerator_ptr = nullptr;
@@ -548,9 +557,9 @@ void SpecificWasapiOutputDevice::get_more_samples(){
 		samples_read = samples_to_read;
 			underflow = (double)samples_to_read / this->selected_format.freq;
 	}
-	if (underflow)
-		std::cout << "Underflow detected. " << underflow * 1000 << " ms.\n";
-	result = this->render_client->ReleaseBuffer(samples_read, flags);
+	//if (underflow)
+	//	std::cout << "Underflow detected. " << underflow * 1000 << " ms.\n";
+	result = this->render_client->ReleaseBuffer((UINT32)samples_read, flags);
 }
 
 class SessionNotifier : public IAudioSessionEvents, public IMMNotificationClient{

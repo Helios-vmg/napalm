@@ -18,3 +18,12 @@ bin/
 *.db
 *.opendb
 bin64/
+*.exe
+*.resources
+*.GenerateResource.Cache
+*.FileListAbsolute.txt
+*ResolveAssemblyReference.cache
+DesignTimeResolveAssemblyReferencesInput.cache
+TemporaryGeneratedFile_*.cs
+*.dll
+*DesignTimeResolveAssemblyReferences.cache

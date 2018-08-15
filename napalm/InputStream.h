@@ -3,6 +3,9 @@
 #include "../common/external_io.h"
 #include <cstdint>
 #include <fstream>
+#ifdef _WIN32
+#include <boost/filesystem/fstream.hpp>
+#endif
 
 class InputStream{
 protected:
@@ -20,7 +23,12 @@ public:
 };
 
 class StdInputStream : public InputStream{
-	std::ifstream file;
+#ifdef _WIN32
+	typedef boost::filesystem::ifstream file_t;
+#else
+	typedef std::ifstream file_t;
+#endif
+	file_t file;
 
 	static size_t static_read(void *user_data, void *dst, size_t dst_size);
 	static std::int64_t static_seek(void *user_data, std::int64_t offset, int whence);

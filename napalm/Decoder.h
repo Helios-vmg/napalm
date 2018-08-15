@@ -58,6 +58,9 @@ class Decoder{
 public:
 	int get_substreams_count();
 	std::unique_ptr<DecoderSubstream> get_substream(int index);
+	const InputStream &get_stream() const{
+		return *this->stream;
+	}
 };
 
 class DecoderSubstream : public BufferSource{

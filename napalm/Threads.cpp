@@ -1,8 +1,5 @@
 #include "Threads.h"
 
-#define LOCK_MUTEX(x) std::lock_guard<decltype(x)> lg_##__COUNT__(x)
-#define UNIQUE_LOCK_MUTEX(x) std::unique_lock<decltype(x)> lg_##__COUNT__(x)
-
 void Event::signal(){
 	LOCK_MUTEX(this->mutex);
 	this->signalled = true;

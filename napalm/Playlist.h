@@ -1,0 +1,55 @@
+#pragma once
+
+#include <string>
+#include "../common/audio_format.h"
+#include "Decoder.h"
+#include <vector>
+
+class Track{
+	std::string path;
+	int subtrack;
+	AudioFormat format;
+	rational_t duration;
+public:
+	Track() = default;
+	Track(Decoder &, int subtrack);
+	Track(const Track &) = default;
+	Track(Track &&) = default;
+	Track &operator=(const Track &) = default;
+	Track &operator=(Track &&) = default;
+
+	const std::string &get_path() const{
+		return this->path;
+	}
+	int get_subtrack() const{
+		return this->subtrack;
+	}
+	AudioFormat get_format() const{
+		return this->format;
+	}
+	const rational_t &get_duration() const{
+		return this->duration;
+	}
+};
+
+class Playlist{
+	std::shared_ptr<Decoder> current_decoder;
+	std::vector<Track> tracks;
+	size_t current_index = 0;
+public:
+	void add(const std::shared_ptr<Decoder> &);
+	const Track &get_current() const{
+		return this->tracks[this->current_index];
+	}
+	void next_track(){
+		this->current_index++;
+		this->current_index %= this->tracks.size();
+	}
+	void previous_track(){
+		this->current_index += this->tracks.size() - 1;
+		this->current_index %= this->tracks.size();
+	}
+	size_t size() const{
+		return this->tracks.size();
+	}
+};

@@ -31,3 +31,7 @@ std::unique_ptr<BufferSource> build_filter_chain(std::unique_ptr<BufferSource> &
 	}
 	return ret;
 }
+
+std::unique_ptr<BufferSource> rebuild_filter_chain(std::unique_ptr<BufferSource> &&source, const AudioFormat &old_saf, const AudioFormat &new_saf, const AudioFormat &daf, ResamplerPreset preset){
+	return build_filter_chain(std::move(source), new_saf, daf, preset);
+}

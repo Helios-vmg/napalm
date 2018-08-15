@@ -5,6 +5,7 @@
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include <boost/dll/shared_library.hpp>
 
 #define DEFINE_FP(x) x##_f x
 #define GET_REQUIRED_FUNCTION(x) this->x = (x##_f)this->module->get_function(#x)
@@ -13,7 +14,7 @@
 class Module{
 	std::string path;
 	typedef std::unique_ptr<void, std::function<void(void *)>> system_module_ptr_t;
-	system_module_ptr_t system_module_ptr;
+	boost::dll::shared_library system_module_ptr;
 	std::unique_ptr<std::remove_pointer<ModulePtr>::type, DestroyModule_f> module;
 	std::unordered_map<std::string, GenericFunctionPtr> functions;
 	std::unordered_set<std::string> smt;
@@ -26,7 +27,7 @@ class Module{
 	DEFINE_FP(get_module_version);
 	DEFINE_FP(get_error_message);
 
-	Module(const std::string &path, system_module_ptr_t &&, InitModule_f, GetModuleApiVersion_f, DestroyModule_f, GetFunctionTable_f);
+	Module(const std::string &path, boost::dll::shared_library &&, InitModule_f, GetModuleApiVersion_f, DestroyModule_f, GetFunctionTable_f);
 	void init_module_types();
 public:
 	static std::shared_ptr<Module> load(const char *path);

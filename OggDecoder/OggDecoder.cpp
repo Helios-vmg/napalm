@@ -4,6 +4,33 @@
 
 static const NumberFormat number_format = IntS16;
 
+static const char *ogg_code_to_string(int e){
+	switch (e){
+		case 0:
+			return "no error";
+		case OV_ENOSEEK:
+			return "the stream is not seekable";
+		case OV_EREAD:
+			return "a read from media returned an error";
+		case OV_EIMPL:
+			return "feature not implemented";
+		case OV_EINVAL:
+			return "invalid argument or incompletely initialized argument passed to call";
+		case OV_ENOTVORBIS:
+			return "bitstream does not contain any Vorbis data";
+		case OV_EVERSION:
+			return "vorbis version mismatch";
+		case OV_EBADHEADER:
+			return "invalid Vorbis bitstream header";
+		case OV_EFAULT:
+			return "internal logic fault; indicates a bug or heap/stack corruption";
+		case OV_EBADLINK:
+			return "the link exists in the Vorbis data stream, but is indecipherable due to garbage or corruption";
+		default:
+			return "unknown error";
+	}
+}
+
 OggDecoder::OggDecoder(const char *path, const ExternalIO &io, Module *module):
 		Decoder(io),
 		module(module),
@@ -15,7 +42,7 @@ OggDecoder::OggDecoder(const char *path, const ExternalIO &io, Module *module):
 	cb.close_func = nullptr;
 	int error = ov_open_callbacks(this, &this->ogg_file, nullptr, 0, cb);
 	if (error < 0)
-		throw std::runtime_error("ov_open_callbacks() failed???");
+		throw std::runtime_error((std::string)"ov_open_callbacks() failed: " + ogg_code_to_string(error));
 	this->stream_count = ov_streams(&this->ogg_file);
 	this->seekable = !!ov_seekable(&this->ogg_file);
 	this->init_time_resolution();
@@ -113,25 +140,6 @@ long OggDecoder::tell(void *s){
 	return (long)This->io.tell();
 }
 
-static const char *ogg_code_to_string(int e){
-	switch (e){
-		case 0:
-			return "no error";
-		case OV_EREAD:
-			return "a read from media returned an error";
-		case OV_ENOTVORBIS:
-			return "bitstream does not contain any Vorbis data";
-		case OV_EVERSION:
-			return "vorbis version mismatch";
-		case OV_EBADHEADER:
-			return "invalid Vorbis bitstream header";
-		case OV_EFAULT:
-			return "internal logic fault; indicates a bug or heap/stack corruption";
-		default:
-			return "unknown error";
-	}
-}
-
 struct OggAudioBuffer{
 	AudioBuffer read_result;
 };
@@ -183,7 +191,7 @@ int OggDecoder::ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, s
 
 AudioBuffer *OggDecoder::internal_read(const AudioFormat &af, size_t extra_data, int substream_index){
 	size_t bytes_per_sample = af.channels * sizeof_NumberFormat(af.format);
-	size_t samples_to_read = 1024 * 16;
+	size_t samples_to_read = 1024;
 	size_t bytes_to_read = samples_to_read * bytes_per_sample;
 
 	auto ret = alloc(bytes_to_read, extra_data);

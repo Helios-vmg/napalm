@@ -13,80 +13,145 @@ Player::Player(): queue(this->final_format){
 	this->open_output();
 }
 
+Player::~Player(){
+	this->stop();
+}
+
 void Player::load_file(const char *path){
 	if (!decoders.size())
 		throw std::runtime_error((std::string)"No decoders to load file " + path);
-	this->decoder = this->decoders.front()->open(std::make_unique<StdInputStream>(path));
+	auto decoder = this->internal_load(path);
+	if (!decoder)
+		throw std::runtime_error("Load failed.");
+	this->playlist.add(decoder);
 }
 
-template <typename T>
-void basic_convert(std::vector<float> &ret, const AudioBuffer &rr, float sub, float mul){
-	auto data = (const T *)rr.data;
-	auto n = ret.size();
-	for (size_t i = 0; i < n; i++){
-		auto sample = data[i];
-		ret[i] = ((float)sample - sub) * mul;
+std::shared_ptr<Decoder> Player::internal_load(const std::string &path){
+	if (!decoders.size())
+		throw std::runtime_error((std::string)"No decoders to load file " + path);
+	auto dot = path.rfind('.');
+	if (dot == path.npos)
+		return nullptr;
+	auto ext = path.substr(dot + 1);
+	std::string last_error;
+	for (auto &d : this->decoders){
+		auto &exts = d->get_supported_extensions();
+		if (exts.find(ext) == exts.end())
+			continue;
+		try{
+			return d->open(std::make_unique<StdInputStream>(path.c_str()));
+		}catch (std::exception &e){
+			last_error = e.what();
+		}
 	}
-}
-
-void unsigned_convert24(std::vector<float> &ret, const AudioBuffer &rr){
-	auto data = rr.data;
-	const auto max = -(float)(1U << 23);
-	auto n = ret.size();
-	for (size_t i = 0; i < n; i++){
-		auto p = data + i * 3;
-		std::uint32_t sample = p[0];
-		sample |= p[1] << 8;
-		sample |= p[2] << 16;
-		ret[i] = ((float)sample - max) * (1.f / max);
-	}
-}
-
-void signed_convert24(std::vector<float> &ret, const AudioBuffer &rr){
-	auto data = rr.data;
-	const auto max = -(float)(1U << 23);
-	auto n = ret.size();
-	for (size_t i = 0; i < n; i++){
-		auto p = data + i * 3;
-		std::int32_t sample = (std::int32_t)p[0];
-		sample |= (std::int32_t)p[1] << 8;
-		sample |= (std::int32_t)p[2] << 16;
-		sample = (sample << 8) >> 8;
-		ret[i] = (float)sample * (1.f / max);
-	}
+	if (last_error.size())
+		throw std::runtime_error(last_error);
+	return nullptr;
 }
 
 void Player::play(){
-	int n = this->decoder->get_substreams_count();
+	LOCK_MUTEX(this->mutex);
+	switch (this->status){
+		case Status::Stopped:
+			if (this->decoding_thread.joinable())
+				this->decoding_thread.join();
+			this->decoding_thread = std::thread([this](){ this->decoding_function(); });
+			this->status = Status::Playing;
+			break;
+		case Status::Playing:
+			//TODO
+			break;
+		case Status::Paused:
+			this->status = Status::Playing;
+			this->output_device->pause(false);
+			break;
+	}
+}
 
-	auto bps = sizeof_NumberFormat(this->final_format.format) * this->final_format.channels;
+void Player::pause(){
+	LOCK_MUTEX(this->mutex);
+	switch (this->status){
+		case Status::Stopped:
+			break;
+		case Status::Playing:
+			this->status = Status::Paused;
+			this->output_device->pause(true);
+			break;
+		case Status::Paused:
+			this->status = Status::Playing;
+			this->output_device->pause(false);
+			break;
+	}
+}
 
-	for (int i = 0; i < n; i++){
-		auto stream = this->decoder->get_substream(i);
-		//stream->seek_to_second(stream->get_length_in_seconds() - rational_t(5, 1), false);
-		std::cout << "Playing stream " << i << std::endl;
-
-		auto format = stream->get_audio_format();
-		if (format.freq != this->final_format.freq){
-			stream->set_number_format_hint(Float32);
-			format = stream->get_audio_format();
+void Player::stop(){
+	{
+		LOCK_MUTEX(this->mutex);
+		switch (this->status){
+			case Status::Stopped:
+				return;
+			case Status::Playing:
+			case Status::Paused:
+				this->status = Status::Stopped;
+				break;
 		}
-		{
-			std::lock_guard<std::mutex> lg(this->mutex);
-			this->now_playing = build_filter_chain(std::move(stream), format, this->final_format);
-		}
+	}
+	this->queue.flush_queue();
+	this->output_device->flush();
+	if (this->decoding_thread.joinable())
+		this->decoding_thread.join();
+	this->decoding_thread = std::thread();
+}
+
+rational_t Player::get_current_position(){
+	LOCK_MUTEX(this->mutex);
+	return this->current_time;
+}
+
+void Player::decoding_function(){
+	std::shared_ptr<Decoder> decoder;
+	//std::ofstream output("output.raw", std::ios::binary);
+	try{
+		AudioFormat src_format = {Invalid, 0, 0};
+		AudioFormat dst_format = {Invalid, 0, 0};
+		std::unique_ptr<BufferSource> temp;
 		while (true){
 			audio_buffer_t buffer(nullptr, release_buffer);
 			{
-				std::lock_guard<std::mutex> lg(this->mutex);
-				format = this->final_format;
+				LOCK_MUTEX(this->mutex);
+				if (this->status == Status::Stopped)
+					break;
+				if (!this->now_playing){
+					if (!this->playlist.size()){
+						this->status = Status::Stopped;
+						break;
+					}
+					auto &current = this->playlist.get_current();
+					if (!decoder || decoder->get_stream().get_path() != current.get_path())
+						decoder = this->internal_load(current.get_path());
+					auto stream = decoder->get_substream(current.get_subtrack());
+					stream->seek_to_sample(0, false);
+					auto new_src_format = stream->get_audio_format();
+					if (!temp || new_src_format != src_format)
+						this->now_playing = build_filter_chain(std::move(stream), new_src_format, this->final_format);
+					else
+						this->now_playing = rebuild_filter_chain(std::move(stream), src_format, new_src_format, this->final_format);
+					src_format = new_src_format;
+				}
+				dst_format = this->final_format;
 				buffer = this->now_playing->read();
+				if (!buffer || !buffer->sample_count){
+					temp = std::move(this->now_playing);
+					this->playlist.next_track();
+					continue;
+				}
 			}
-			if (!buffer || !buffer->sample_count)
-				break;
-			this->queue.push_to_queue(std::move(buffer), format);
+			//output.write((const char *)buffer->data, buffer->sample_count * dst_format.channels * sizeof_NumberFormat(dst_format.format));
+			this->queue.push_to_queue(std::move(buffer), dst_format);
 		}
+	}catch (...){
 	}
+	this->now_playing.reset();
 }
 
 void Player::load_plugins(){
@@ -121,11 +186,13 @@ void Player::open_output(){
 				auto formats = kv.second->get_preferred_formats();
 				if (!formats.size())
 					continue;
-				auto &queue = this->queue;
 				kv.second->open(
 					0,
-					[&queue](void *dst, size_t size, size_t samples_queued){
-						return queue.pop_buffer(dst, size, samples_queued);
+					[this](void *dst, size_t size, size_t samples_queued) -> size_t{
+						LOCK_MUTEX(this->mutex);
+						if (this->status == Status::Paused)
+							return 0;
+						return this->queue.pop_buffer(this->current_time, dst, size, samples_queued);
 					},
 					[this](const AudioFormat &af){
 						this->audio_format_changed(af);
@@ -143,13 +210,13 @@ void Player::open_output(){
 void Player::audio_format_changed(const AudioFormat &af){
 	auto old_format = this->final_format;
 	if (af == old_format){
-		std::cout << "Default device changed. Nothing special to do.\n";
+		//std::cout << "Default device changed. Nothing special to do.\n";
 		return;
 	}
 
 	this->queue.set_expected_format(af);
 
-	std::lock_guard<std::mutex> lg(this->mutex);
+	LOCK_MUTEX(this->mutex);
 	auto temp = this->now_playing->unroll_chain();
 	if (temp)
 		this->now_playing = std::move(temp);
@@ -162,8 +229,8 @@ void Player::audio_format_changed(const AudioFormat &af){
 	}
 	auto format = substream->get_audio_format();
 	this->final_format = af;
-	std::cout << "Default device changed. Format was changed.\n"
-		"Old format: " << old_format << "\n"
-		"New format: " << af << std::endl;
+	//std::cout << "Default device changed. Format was changed.\n"
+	//	"Old format: " << old_format << "\n"
+	//	"New format: " << af << std::endl;
 	this->now_playing = build_filter_chain(std::move(this->now_playing), format, this->final_format);
 }

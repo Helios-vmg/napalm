@@ -1,6 +1,7 @@
 #include "InputStream.h"
 #include <stdexcept>
 #include <sstream>
+#include "../common/utf8.hpp"
 
 static void bad_whence(int whence){
 	std::stringstream stream;
@@ -9,14 +10,21 @@ static void bad_whence(int whence){
 }
 
 StdInputStream::StdInputStream(const char *path): InputStream(path){
+#ifdef _WIN32
+	this->file.open(utf8_to_string(this->path), std::ios::binary);
+#else
 	this->file.open(this->path, std::ios::binary);
+#endif
 	if (!this->file)
 		throw std::runtime_error("File not found: " + this->path);
 }
 
 size_t StdInputStream::read(void *dst, size_t dst_size){
 	this->file.read((char *)dst, dst_size);
-	return this->file.gcount();
+	if (!this->file)
+		this->file.clear();
+	size_t ret = this->file.gcount();
+	return ret;
 }
 
 std::int64_t StdInputStream::seek(std::int64_t offset, int whence){
@@ -33,7 +41,12 @@ std::int64_t StdInputStream::seek(std::int64_t offset, int whence){
 		default:
 			bad_whence(whence);
 	}
-	return this->file.tellg();
+	if (!this->file)
+		this->file.clear();
+	std::int64_t ret = this->file.tellg();
+	if (whence == SEEK_SET && ret != offset)
+		__debugbreak();
+	return ret;
 }
 
 std::int64_t StdInputStream::tell(){

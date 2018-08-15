@@ -24,7 +24,7 @@ public:
 	AudioQueue(AudioFormat &format): format(&format){}
 	~AudioQueue();
 	void push_to_queue(audio_buffer_t &&buffer, AudioFormat format);
-	size_t pop_buffer(void *void_dst, size_t size, size_t samples_queued);
+	size_t pop_buffer(rational_t &time, void *void_dst, size_t size, size_t samples_queued);
 	BufferExtraData flush_queue();
 	void set_expected_format(const AudioFormat &format);
 };

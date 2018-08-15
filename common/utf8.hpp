@@ -99,4 +99,5 @@ void string_to_utf8(std::string &dst, const std::basic_string<T> &src){
 }
 
 std::wstring utf8_to_string(const std::string &src);
+std::wstring utf8_to_string(const char *src);
 std::string string_to_utf8(const std::wstring &src);

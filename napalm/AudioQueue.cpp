@@ -41,17 +41,23 @@ void AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format){
 	clear_queue(this->exit_queue);
 }
 
-size_t AudioQueue::pop_buffer(void *void_dst, size_t size, size_t samples_queued){
+size_t AudioQueue::pop_buffer(rational_t &time, void *void_dst, size_t size, size_t samples_queued){
 	size_t ret = 0;
 	bool signal = false;
+	bool set = false;
 	{
-		std::lock_guard<std::mutex> lg(this->mutex);
+		LOCK_MUTEX(this->mutex);
 		auto dst = (std::uint8_t *)void_dst;
 		auto sample_size = sizeof_NumberFormat(this->format->format) * this->format->channels;
 		while (size){
 			if (!this->head)
 				break;
 			auto &extra = get_extra_data<BufferExtraData>(this->head);
+			if (!set){
+				time = rational_t(extra.timestamp.numerator, extra.timestamp.denominator);
+				time += rational_t(extra.sample_offset, this->format->freq);
+				set = true;
+			}
 			auto copy_size = std::min(size, this->head->sample_count - extra.sample_offset);
 			memcpy(dst, this->head->data + extra.sample_offset * sample_size, copy_size * sample_size);
 			extra.sample_offset += copy_size;
@@ -72,10 +78,13 @@ size_t AudioQueue::pop_buffer(void *void_dst, size_t size, size_t samples_queued
 	}
 	if (signal || !ret)
 		this->event.signal();
+	if (!set)
+		time = rational_t(-1, 1);
 	return ret;
 }
 
 BufferExtraData AudioQueue::flush_queue(){
+	LOCK_MUTEX(this->mutex);
 	BufferExtraData ret;
 	bool set = false;
 	memset(&ret, 0, sizeof(ret));

@@ -1,8 +1,8 @@
 #include "Module.h"
 #include "utility.h"
-#include <Windows.h>
 #include <functional>
 #include <algorithm>
+#include <boost/dll.hpp>
 
 #define DEFINE_STRING(x) static const char *x##_string = #x
 
@@ -26,26 +26,25 @@ std::shared_ptr<Module> Module::load(const char *path){
 }
 
 std::shared_ptr<Module> Module::load(const std::wstring &path){
-	auto module = LoadLibraryW(path.c_str());
-	if (!module)
-		return nullptr;
+	boost::dll::shared_library module;
 
-	std::unique_ptr<void, std::function<void(void *)>> p((void *)module, [](void *mod){ FreeLibrary((HMODULE)mod); });
-
-#define GET_FUNCTION(x) auto x = (x##_f)GetProcAddress(module, x##_string); \
-	if (!x) \
-		return nullptr
-
-	GET_FUNCTION(InitModule);
-	GET_FUNCTION(GetModuleApiVersion);
-	GET_FUNCTION(DestroyModule);
-	GET_FUNCTION(GetFunctionTable);
-
-	auto utf8 = string_to_utf8(path);
+	bool fatal = false;
 	try{
-		return std::shared_ptr<Module>(new Module(utf8, std::move(p), InitModule, GetModuleApiVersion, DestroyModule, GetFunctionTable));
-	}catch (std::exception &e){
-		throw std::runtime_error((std::string)"Error initializing module " + utf8 + ": " + e.what());
+		module = boost::dll::shared_library(path, boost::dll::load_mode::append_decorations);
+
+#define GET_FUNCTION(x) auto x = module.get<std::remove_pointer<x##_f>::type>(x##_string)
+
+		GET_FUNCTION(InitModule);
+		GET_FUNCTION(GetModuleApiVersion);
+		GET_FUNCTION(DestroyModule);
+		GET_FUNCTION(GetFunctionTable);
+
+		auto utf8 = string_to_utf8(path);
+		return std::shared_ptr<Module>(new Module(utf8, std::move(module), InitModule, GetModuleApiVersion, DestroyModule, GetFunctionTable));
+	}catch (std::exception &){
+		if (!fatal)
+			return nullptr;
+		throw;
 	}
 }
 
@@ -54,7 +53,7 @@ static char toslash(char c){
 	return c != '\\' ? c : '/';
 }
 
-Module::Module(const std::string &path, system_module_ptr_t &&module, InitModule_f InitModule, GetModuleApiVersion_f GetModuleApiVersion, DestroyModule_f DestroyModule, GetFunctionTable_f GetFunctionTable):
+Module::Module(const std::string &path, boost::dll::shared_library &&module, InitModule_f InitModule, GetModuleApiVersion_f GetModuleApiVersion, DestroyModule_f DestroyModule, GetFunctionTable_f GetFunctionTable):
 		path(path),
 		system_module_ptr(std::move(module)),
 		module(nullptr, DestroyModule){
