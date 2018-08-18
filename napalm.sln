@@ -3,14 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "napalm", "napalm\napalm.vcxproj", "{BFAFC97D-2530-46A5-AFFA-2CB445DFC273}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "napalm", "msvc\napalm\napalm.vcxproj", "{BFAFC97D-2530-46A5-AFFA-2CB445DFC273}"
 	ProjectSection(ProjectDependencies) = postProject
 		{21014F01-8662-4383-981E-4F6232F93B0A} = {21014F01-8662-4383-981E-4F6232F93B0A}
 		{6E439C1A-20F9-401A-850D-300EE0325106} = {6E439C1A-20F9-401A-850D-300EE0325106}
 		{D3459F9A-20AF-4094-BF84-D85AF3C64AE5} = {D3459F9A-20AF-4094-BF84-D85AF3C64AE5}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OggDecoder", "OggDecoder\OggDecoder.vcxproj", "{21014F01-8662-4383-981E-4F6232F93B0A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OggDecoder", "msvc\OggDecoder\OggDecoder.vcxproj", "{21014F01-8662-4383-981E-4F6232F93B0A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A19AF316-1460-4805-86C7-AFB0B301462D} = {A19AF316-1460-4805-86C7-AFB0B301462D}
 		{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235} = {1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235}
@@ -21,39 +21,39 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencie
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{43C5463B-DD6D-4961-891C-2C74A5337807}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsamplerate", "dependencies\projects\libsamplerate\libsamplerate.vcxproj", "{D3459F9A-20AF-4094-BF84-D85AF3C64AE5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsamplerate", "msvc\dependencies\libsamplerate\libsamplerate.vcxproj", "{D3459F9A-20AF-4094-BF84-D85AF3C64AE5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg", "dependencies\projects\libogg\libogg.vcxproj", "{A19AF316-1460-4805-86C7-AFB0B301462D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg", "msvc\dependencies\libogg\libogg.vcxproj", "{A19AF316-1460-4805-86C7-AFB0B301462D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "dependencies\projects\libvorbis\libvorbis.vcxproj", "{C3C2A226-B11D-4243-BEF6-8B2C5779C3B4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "msvc\dependencies\libvorbis\libvorbis.vcxproj", "{C3C2A226-B11D-4243-BEF6-8B2C5779C3B4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbisfile", "dependencies\projects\libvorbisfile\libvorbisfile.vcxproj", "{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbisfile", "msvc\dependencies\libvorbisfile\libvorbisfile.vcxproj", "{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{D627D582-F5F3-49CD-9A63-495BC4B26278}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "conversion_generator", "misc\conversion_generator\conversion_generator.vcxproj", "{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WasapiOutput", "msvc\WasapiOutput\WasapiOutput.vcxproj", "{6E439C1A-20F9-401A-850D-300EE0325106}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WasapiOutput", "WasapiOutput\WasapiOutput.vcxproj", "{6E439C1A-20F9-401A-850D-300EE0325106}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cs-napalm", "cs-napalm\cs-napalm.csproj", "{09B63404-C474-4860-AC73-7377C276ADB6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cs-napalm", "msvc\cs-napalm\cs-napalm.csproj", "{09B63404-C474-4860-AC73-7377C276ADB6}"
 	ProjectSection(ProjectDependencies) = postProject
 		{BFAFC97D-2530-46A5-AFFA-2CB445DFC273} = {BFAFC97D-2530-46A5-AFFA-2CB445DFC273}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UIs", "UIs", "{9B036C54-8E46-4D8B-BEB7-5C58C1218E6E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "t-napalm", "t-napalm\t-napalm.vcxproj", "{D3D93704-BCB8-41B7-B754-70D3014F1E2E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "t-napalm", "msvc\t-napalm\t-napalm.vcxproj", "{D3D93704-BCB8-41B7-B754-70D3014F1E2E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{BFAFC97D-2530-46A5-AFFA-2CB445DFC273} = {BFAFC97D-2530-46A5-AFFA-2CB445DFC273}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pdcurses", "dependencies\projects\pdcurses\pdcurses.vcxproj", "{D9AF4EB4-C777-448A-8081-9EE58DEA9235}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pdcurses", "msvc\dependencies\pdcurses\pdcurses.vcxproj", "{D9AF4EB4-C777-448A-8081-9EE58DEA9235}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tui-napalm", "tui-napalm\tui-napalm.vcxproj", "{56396520-EE72-4CB2-963A-7D975EF32F34}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tui-napalm", "msvc\tui-napalm\tui-napalm.vcxproj", "{56396520-EE72-4CB2-963A-7D975EF32F34}"
 	ProjectSection(ProjectDependencies) = postProject
 		{BFAFC97D-2530-46A5-AFFA-2CB445DFC273} = {BFAFC97D-2530-46A5-AFFA-2CB445DFC273}
 		{D9AF4EB4-C777-448A-8081-9EE58DEA9235} = {D9AF4EB4-C777-448A-8081-9EE58DEA9235}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "conversion_generator", "msvc\conversion_generator\conversion_generator.vcxproj", "{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,14 +111,6 @@ Global
 		{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235}.Release|x64.Build.0 = Release|x64
 		{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235}.Release|x86.ActiveCfg = Release|Win32
 		{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235}.Release|x86.Build.0 = Release|Win32
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x64.ActiveCfg = Debug|x64
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x64.Build.0 = Debug|x64
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x86.ActiveCfg = Debug|Win32
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x86.Build.0 = Debug|Win32
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x64.ActiveCfg = Release|x64
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x64.Build.0 = Release|x64
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x86.ActiveCfg = Release|Win32
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x86.Build.0 = Release|Win32
 		{6E439C1A-20F9-401A-850D-300EE0325106}.Debug|x64.ActiveCfg = Debug|x64
 		{6E439C1A-20F9-401A-850D-300EE0325106}.Debug|x64.Build.0 = Debug|x64
 		{6E439C1A-20F9-401A-850D-300EE0325106}.Debug|x86.ActiveCfg = Debug|Win32
@@ -159,6 +151,14 @@ Global
 		{56396520-EE72-4CB2-963A-7D975EF32F34}.Release|x64.Build.0 = Release|x64
 		{56396520-EE72-4CB2-963A-7D975EF32F34}.Release|x86.ActiveCfg = Release|Win32
 		{56396520-EE72-4CB2-963A-7D975EF32F34}.Release|x86.Build.0 = Release|Win32
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x64.ActiveCfg = Debug|x64
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x64.Build.0 = Debug|x64
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x86.ActiveCfg = Debug|Win32
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Debug|x86.Build.0 = Debug|Win32
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x64.ActiveCfg = Release|x64
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x64.Build.0 = Release|x64
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x86.ActiveCfg = Release|Win32
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -169,11 +169,11 @@ Global
 		{A19AF316-1460-4805-86C7-AFB0B301462D} = {D45D0839-291D-4DDE-AFE3-D62E562CBC36}
 		{C3C2A226-B11D-4243-BEF6-8B2C5779C3B4} = {D45D0839-291D-4DDE-AFE3-D62E562CBC36}
 		{1F54A01A-C5E7-45A9-9E1E-5D5BE4EB2235} = {D45D0839-291D-4DDE-AFE3-D62E562CBC36}
-		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07} = {D627D582-F5F3-49CD-9A63-495BC4B26278}
 		{6E439C1A-20F9-401A-850D-300EE0325106} = {43C5463B-DD6D-4961-891C-2C74A5337807}
 		{09B63404-C474-4860-AC73-7377C276ADB6} = {9B036C54-8E46-4D8B-BEB7-5C58C1218E6E}
 		{D3D93704-BCB8-41B7-B754-70D3014F1E2E} = {9B036C54-8E46-4D8B-BEB7-5C58C1218E6E}
 		{D9AF4EB4-C777-448A-8081-9EE58DEA9235} = {D45D0839-291D-4DDE-AFE3-D62E562CBC36}
 		{56396520-EE72-4CB2-963A-7D975EF32F34} = {9B036C54-8E46-4D8B-BEB7-5C58C1218E6E}
+		{FB868A6E-0DCD-4EB6-AFC4-09DD10829D07} = {D627D582-F5F3-49CD-9A63-495BC4B26278}
 	EndGlobalSection
 EndGlobal
