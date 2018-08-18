@@ -115,14 +115,6 @@ public:
 	virtual DecoderSubstream *get_substream(int index) = 0;
 };
 
-inline RationalValue to_RationalValue(const rational_t &r){
-	return {r.numerator(), r.denominator()};
-}
-
-inline rational_t to_rational(const RationalValue &rv){
-	return {rv.numerator, rv.denominator};
-}
-
 class DecoderSubstream{
 protected:
 	Decoder &parent;

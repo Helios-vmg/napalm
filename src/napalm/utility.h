@@ -5,7 +5,8 @@
 #include <cstdint>
 #include <memory>
 #include <cstring>
-#include "../common/utf8.hpp"
+#include <utf8.hpp>
+#include <RationalValue.h>
 
 enum NumberFormat;
 typedef boost::rational<std::int64_t> rational_t;

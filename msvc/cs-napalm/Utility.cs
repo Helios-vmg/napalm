@@ -67,7 +67,7 @@ namespace cs_napalm
 
         public static string AbsoluteFormatTime(double time, bool ms = false)
         {
-            return time < 0 ? "undefined" : FormatTime(time, ms);
+            return time < 0 ? "N/A" : FormatTime(time, ms);
         }
 
     }

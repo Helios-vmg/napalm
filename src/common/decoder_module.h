@@ -3,6 +3,7 @@
 #include "module.h"
 #include "external_io.h"
 #include "audio_format.h"
+#include "RationalValue.h"
 #include <stdint.h>
 
 #define DECODER_MODULE_TYPE "decoder"
@@ -19,11 +20,6 @@ typedef struct{
 	size_t extra_data_size;
 	uint8_t data[1];
 } AudioBuffer;
-
-typedef struct{
-	int64_t numerator;
-	int64_t denominator;
-} RationalValue;
 
 
 

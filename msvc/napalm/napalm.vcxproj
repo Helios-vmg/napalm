@@ -95,7 +95,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>BUILDING_NAPALM;WIN32;_DEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -112,7 +112,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>BUILDING_NAPALM;_DEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -131,7 +131,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>BUILDING_NAPALM;WIN32;NDEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -153,7 +153,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>BUILDING_NAPALM;NDEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -174,12 +174,15 @@
     <ClInclude Include="..\..\src\common\GenericMetadata.hpp" />
     <ClInclude Include="..\..\src\common\module.h" />
     <ClInclude Include="..\..\src\common\output_module.h" />
+    <ClInclude Include="..\..\src\common\RationalValue.h" />
     <ClInclude Include="..\..\src\common\WrappedExternalIO.hpp" />
     <ClInclude Include="..\..\src\napalm\AudioQueue.h" />
+    <ClInclude Include="..\..\src\napalm\BasicTrackInfo.h" />
     <ClInclude Include="..\..\src\napalm\BufferSource.h" />
     <ClInclude Include="..\..\src\napalm\Decoder.h" />
     <ClInclude Include="..\..\src\napalm\Filter.h" />
     <ClInclude Include="..\..\src\napalm\InputStream.h" />
+    <ClInclude Include="..\..\src\napalm\Metadata.h" />
     <ClInclude Include="..\..\src\napalm\Module.h" />
     <ClInclude Include="..\..\src\napalm\CircularQueue.h" />
     <ClInclude Include="..\..\src\napalm\OutputModule.h" />
@@ -195,6 +198,7 @@
     <ClCompile Include="..\..\src\napalm\Filter.cpp" />
     <ClCompile Include="..\..\src\napalm\InputStream.cpp" />
     <ClCompile Include="..\..\src\napalm\main.cpp" />
+    <ClCompile Include="..\..\src\napalm\Metadata.cpp" />
     <ClCompile Include="..\..\src\napalm\Module.cpp" />
     <ClCompile Include="..\..\src\napalm\OutputModule.cpp" />
     <ClCompile Include="..\..\src\napalm\Player.cpp" />

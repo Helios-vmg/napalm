@@ -3,6 +3,7 @@
 #include <string>
 #include "../common/audio_format.h"
 #include "Decoder.h"
+#include "Metadata.h"
 #include <vector>
 
 class Track{
@@ -10,6 +11,7 @@ class Track{
 	int subtrack;
 	AudioFormat format;
 	rational_t duration;
+	std::unique_ptr<GenericMetadata> metadata;
 public:
 	Track() = default;
 	Track(Decoder &, int subtrack);
@@ -30,6 +32,12 @@ public:
 	const rational_t &get_duration() const{
 		return this->duration;
 	}
+	bool has_metadata() const{
+		return !!this->metadata;
+	}
+	GenericMetadata &get_metadata() const{
+		return *this->metadata;
+	}
 };
 
 class Playlist{
@@ -38,8 +46,14 @@ class Playlist{
 	size_t current_index = 0;
 public:
 	void add(const std::shared_ptr<Decoder> &);
+	size_t get_current_index() const{
+		return this->current_index;
+	}
 	const Track &get_current() const{
 		return this->tracks[this->current_index];
+	}
+	const Track &operator[](size_t i) const{
+		return this->tracks[i];
 	}
 	void next_track(){
 		this->current_index++;

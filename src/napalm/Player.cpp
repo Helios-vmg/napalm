@@ -136,6 +136,41 @@ void Player::set_callbacks(const Callbacks &callbacks){
 	this->callbacks = callbacks;
 }
 
+void Player::get_playlist_state(size_t &size, size_t &position){
+	LOCK_MUTEX(this->mutex);
+	size = this->playlist.size();
+	position = this->playlist.get_current_index();
+}
+
+BasicTrackInfo Player::get_basic_track_info(size_t playlist_position){
+	if (playlist_position >= this->playlist.size())
+		return BasicTrackInfo();
+	auto &track = this->playlist[playlist_position];
+	BasicTrackInfoHelper helper;
+	NumericTrackInfo numeric_track_info;
+	if (track.has_metadata()){
+		auto &metadata = track.get_metadata();
+		helper.album = metadata.album();
+		helper.date = metadata.date();
+		helper.track_artist = metadata.track_artist();
+		helper.track_id = metadata.track_id();
+		helper.track_number = metadata.track_number();
+		helper.track_title = metadata.track_title();
+
+		numeric_track_info.track_number_int = metadata.track_number_int();
+		numeric_track_info.album_gain = metadata.album_gain();
+		numeric_track_info.album_peak = metadata.album_peak();
+		numeric_track_info.track_gain = metadata.track_gain();
+		numeric_track_info.track_peak = metadata.track_peak();
+	}else
+		//Test string
+		helper.track_title = "\xE9\xA6\xAC\xE3\x80\x8C\x45\x71\x75\x75\x73\x20\x63"
+		                     "\x61\x62\x61\x6C\x6C\x75\x73\xE3\x80\x8D";
+	helper.path = track.get_path();
+	numeric_track_info.duration = to_RationalValue(track.get_duration());
+	return BasicTrackInfo(numeric_track_info, std::move(helper));
+}
+
 void Player::decoding_function(){
 	std::shared_ptr<Decoder> decoder;
 	//std::ofstream output("output.raw", std::ios::binary);

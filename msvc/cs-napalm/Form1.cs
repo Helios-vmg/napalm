@@ -45,7 +45,7 @@ namespace cs_napalm
             if (_player != null)
                 return;
             _player = new Player();
-            _player.SetCallbacks(() => {});
+            _player.SetCallbacks(OnTrackChanged);
         }
 
         private void PlayButton_Click(object sender, EventArgs e)
@@ -97,5 +97,20 @@ namespace cs_napalm
             if (position >= 0 && position <= duration)
                 SeekBar.Value = position;
         }
+
+        private void OnTrackChanged()
+        {
+            var state = _player.GetPlaylistState();
+            var info = _player.GetBasicTrackInfo(state.Item2);
+            if (info == null)
+            {
+                MessageBox.Show("Track changed, no metadata.");
+            }
+            else
+            {
+                MessageBox.Show($"Track changed. Title: {info.TrackTitle}, Duration: {Utility.AbsoluteFormatTime(info.Duration, true)}");
+            }
+        }
+
     }
 }

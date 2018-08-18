@@ -35,8 +35,7 @@ audio_buffer_t ResamplingFilter::read(){
 
 		assert(this->extra_info);
 		auto &extra_data = get_extra_data<BufferExtraData>(ret);
-		extra_data.timestamp.numerator = this->extra_info->current_time.numerator();
-		extra_data.timestamp.denominator = this->extra_info->current_time.denominator();
+		extra_data.timestamp = to_RationalValue(this->extra_info->current_time);
 		extra_data.stream_id = this->extra_info->stream_id;
 		extra_data.next = nullptr;
 		this->extra_info->current_time += rational_t(ret->sample_count, frequency);

@@ -6,8 +6,10 @@
 #include "AudioQueue.h"
 #include "Playlist.h"
 #include "CircularQueue.h"
+#include "BasicTrackInfo.h"
 #include <memory>
 #include <mutex>
+#include <cstdint>
 
 class Player;
 
@@ -23,7 +25,7 @@ struct Callbacks{
 };
 
 class Player{
-	enum class Notification{
+	enum class Notification : std::uint8_t{
 		Destructing,
 		TrackChanged,
 	};
@@ -62,4 +64,6 @@ public:
 	void previous();
 	rational_t get_current_position();
 	void set_callbacks(const Callbacks &);
+	void get_playlist_state(size_t &size, size_t &position);
+	BasicTrackInfo get_basic_track_info(size_t playlist_position);
 };

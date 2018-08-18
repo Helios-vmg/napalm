@@ -1,5 +1,6 @@
 #include "Player.h"
-#include "../common/decoder_module.h"
+#include "BasicTrackInfo.h"
+#include <decoder_module.h>
 #include <iostream>
 
 #if defined WIN32 || defined _WIN32 || defined _WIN64
@@ -50,13 +51,35 @@ EXPORT void previous(Player *player){
 }
 
 EXPORT RationalValue get_current_time(Player *player){
-	auto current = player->get_current_position();
-	RationalValue ret;
-	ret.numerator = current.numerator();
-	ret.denominator = current.denominator();
-	return ret;
+	return to_RationalValue(player->get_current_position());
 }
 
 EXPORT void set_callbacks(Player *player, const Callbacks *callbacks){
 	player->set_callbacks(*callbacks);
+}
+
+int saturate(size_t n){
+	if (n > (size_t)std::numeric_limits<int>::max())
+		return std::numeric_limits<int>::max();
+	return (int)n;
+}
+
+EXPORT void get_playlist_state(Player *player, int *size, int *position){
+	size_t s, p;
+	player->get_playlist_state(s, p);
+	*size = saturate(s);
+	*position = saturate(p);
+}
+
+EXPORT BasicTrackInfo *get_basic_track_info(Player *player, int playlist_position){
+	if (playlist_position < 0)
+		return nullptr;
+	auto ret = player->get_basic_track_info(playlist_position);
+	if (ret.helper == nullptr)
+		return nullptr;
+	return new BasicTrackInfo(std::move(ret));
+}
+
+EXPORT void release_basic_track_info(BasicTrackInfo *info){
+	delete info;
 }

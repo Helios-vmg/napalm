@@ -1,6 +1,6 @@
 #include "utility.h"
-#include "../common/audio_format.h"
-#include "../common/utf8.cpp"
+#include <audio_format.h>
+#include <utf8.cpp>
 #include <ostream>
 
 bool valid_format(const AudioFormat &af){

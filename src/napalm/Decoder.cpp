@@ -108,21 +108,12 @@ audio_buffer_t DecoderSubstream::read(){
 		throw std::runtime_error("Invalid buffer.");
 
 	auto &extra_data = get_extra_data<BufferExtraData>(ret);
-	extra_data.timestamp.numerator = this->current_time.numerator();
-	extra_data.timestamp.denominator = this->current_time.denominator();
+	extra_data.timestamp = to_RationalValue(this->current_time);
 	extra_data.next = nullptr;
 	extra_data.stream_id = this->stream_id;
 	this->current_time += rational_t(ret->sample_count, freq);
 
 	return ret;
-}
-
-rational_t to_rational(const RationalValue &r){
-	return rational_t(r.numerator, r.denominator);
-}
-
-RationalValue to_RationalValue(const rational_t &r){
-	return RationalValue{r.numerator(), r.denominator()};
 }
 
 rational_t DecoderSubstream::get_length_in_seconds(){
