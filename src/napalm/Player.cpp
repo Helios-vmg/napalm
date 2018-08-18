@@ -218,10 +218,12 @@ void Player::decoding_function(){
 }
 
 void Player::async_notifications_function(){
-	while (true){
+	bool stop = false;
+	while (!stop){
 		auto type = this->notification_queue.pop();
 		switch (type){
 			case Notification::Destructing:
+				stop = true;
 				break;
 			case Notification::TrackChanged:
 				{
