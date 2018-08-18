@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using cs_napalm.Properties;
 
 namespace cs_napalm
 {
@@ -18,102 +21,81 @@ namespace cs_napalm
         public Form1()
         {
             InitializeComponent();
-            _player = new Player();
-            _timer.Interval = 100;
+
+            ArtCoverLabel.Image = new Bitmap(Resources.napalm_icon, new Size(ArtCoverLabel.Width, ArtCoverLabel.Height));
+            
+            _timer.Interval = 250;
             _timer.Tick += UpdateTime;
             _timer.Enabled = true;
         }
-
+        
         private void LoadButton_Click(object sender, EventArgs e)
         {
             var d = new OpenFileDialog();
             var result = d.ShowDialog();
             if (result == DialogResult.OK)
+            {
+                InitPlayer();
                 _player.LoadFile(d.FileName);
+            }
+        }
+
+        void InitPlayer()
+        {
+            if (_player != null)
+                return;
+            _player = new Player();
+            _player.SetCallbacks(() => {});
         }
 
         private void PlayButton_Click(object sender, EventArgs e)
         {
+            InitPlayer();
             _player.Play();
         }
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
+            InitPlayer();
             _player.Pause();
         }
 
         private void StopButton_Click(object sender, EventArgs e)
         {
+            InitPlayer();
             _player.Stop();
         }
 
-        static string FormatTime(double time)
+        private void PreviousTrackButton_Click(object sender, EventArgs e)
         {
-            bool negative = time < 0;
-            if (negative)
-                time = -time;
-            var milliseconds = (long)Math.Floor(time * 1000) % 1000;
-            var total = (long)Math.Floor(time);
-            var seconds = total % 60;
-            total /= 60;
-            var minutes = total % 60;
-            total /= 60;
-            var hours = total % 24;
-            total /= 24;
-            var days = total % 7;
-            var weeks = total / 7;
-
-            var ret = new StringBuilder();
-
-            bool force = false;
-
-            if (negative)
-                ret.Append("-(");
-
-            if (weeks > 0)
-            {
-                ret.Append(weeks);
-                ret.Append(" wk ");
-                force = true;
-            }
-
-            if (force || days > 0)
-            {
-                ret.Append(days);
-                ret.Append(" d ");
-                force = true;
-            }
-
-            if (force || hours > 0)
-            {
-                ret.Append(hours.ToString("D2"));
-                ret.Append(":");
-            }
-            ret.Append(minutes.ToString("D2"));
-            ret.Append(":");
-            ret.Append(seconds.ToString("D2"));
-            if (milliseconds > 0)
-            {
-                ret.Append(".");
-                ret.Append(milliseconds.ToString("D3"));
-            }
-
-            if (negative)
-                ret.Append(")");
-
-            return ret.ToString();
+            InitPlayer();
+            _player.PreviousTrack();
         }
 
-        static string AbsoluteFormatTime(double time)
+        private void NextTrackButton_Click(object sender, EventArgs e)
         {
-            return time < 0 ? "undefined" : FormatTime(time);
+            InitPlayer();
+            _player.NextTrack();
         }
 
         private void UpdateTime(object sender, EventArgs e)
         {
+            if (_player == null)
+            {
+                TimeLabel.Text = Utility.AbsoluteFormatTime(-1);
+                DurationLabel.Text = Utility.AbsoluteFormatTime(-1);
+                return;
+            }
             var time = _player.GetCurrentTime();
-            TimeLabel.Text = AbsoluteFormatTime(time.Item1);
-            DurationLabel.Text = AbsoluteFormatTime(time.Item2);
+            TimeLabel.Text = Utility.AbsoluteFormatTime(time.Item1);
+            DurationLabel.Text = Utility.AbsoluteFormatTime(time.Item2);
+
+            var position = (int) Math.Floor(time.Item1*100);
+            var duration = (int) Math.Floor(time.Item2*100);
+            if (time.Item2 >= 0)
+                SeekBar.TickFrequency = SeekBar.Maximum = duration;
+            if (position >= 0 && position <= duration)
+                SeekBar.Value = position;
         }
     }
 }

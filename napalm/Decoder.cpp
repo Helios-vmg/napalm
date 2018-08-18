@@ -83,6 +83,7 @@ DecoderSubstream::DecoderSubstream(Decoder &decoder, int index):
 		this->module.module->check_error();
 		throw std::runtime_error("Unknown error decoding " + decoder.stream->get_path());
 	}
+	this->length = this->get_length_in_seconds();
 }
 
 AudioFormat DecoderSubstream::get_audio_format(){
@@ -109,6 +110,8 @@ audio_buffer_t DecoderSubstream::read(){
 	auto &extra_data = get_extra_data<BufferExtraData>(ret);
 	extra_data.timestamp.numerator = this->current_time.numerator();
 	extra_data.timestamp.denominator = this->current_time.denominator();
+	extra_data.track_length.numerator = this->length.numerator();
+	extra_data.track_length.denominator = this->length.denominator();
 	extra_data.next = nullptr;
 	extra_data.stream_id = this->stream_id;
 	this->current_time += rational_t(ret->sample_count, freq);

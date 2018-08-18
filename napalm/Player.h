@@ -5,6 +5,7 @@
 #include "Threads.h"
 #include "AudioQueue.h"
 #include "Playlist.h"
+#include "CircularQueue.h"
 #include <memory>
 #include <mutex>
 
@@ -16,7 +17,17 @@ enum class Status{
 	Paused,
 };
 
+struct Callbacks{
+	void *cb_data = nullptr;
+	void (*on_track_changed)(void *cb_data) = nullptr;
+};
+
 class Player{
+	enum class Notification{
+		Destructing,
+		TrackChanged,
+	};
+
 	std::vector<std::unique_ptr<DecoderModule>> decoders;
 	std::vector<std::unique_ptr<OutputModule>> outputs;
 	std::unique_ptr<BufferSource> now_playing;
@@ -24,16 +35,22 @@ class Player{
 	std::shared_ptr<OutputDevice> output_device;
 	AudioFormat final_format;
 	AudioQueue queue;
-	std::mutex mutex;
+	std::recursive_mutex mutex;
 	Status status = Status::Stopped;
 	Playlist playlist;
 	std::thread decoding_thread;
 	rational_t current_time = {0, 1};
+	rational_t current_track_length = {0, 1};
+	std::mutex callbacks_mutex;
+	Callbacks callbacks;
+	std::thread async_notifications_thread;
+	ThreadSafeCircularQueue<Notification> notification_queue;
 	
 	void load_plugins();
 	void open_output();
 	void audio_format_changed(const AudioFormat &af);
 	void decoding_function();
+	void async_notifications_function();
 	std::shared_ptr<Decoder> internal_load(const std::string &path);
 public:
 	Player();
@@ -42,5 +59,8 @@ public:
 	void play();
 	void pause();
 	void stop();
-	rational_t get_current_position();
+	void next();
+	void previous();
+	std::pair<rational_t, rational_t> get_current_position();
+	void set_callbacks(const Callbacks &);
 };

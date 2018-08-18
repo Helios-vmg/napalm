@@ -21,7 +21,7 @@ ResamplingFilter::ResamplingFilter(std::unique_ptr<BufferSource> &&source, const
 }
 
 audio_buffer_t ResamplingFilter::read(){
-	size_t max_samples = 1024;
+	const long max_samples = 1024;
 	auto ret = allocate_buffer(max_samples * this->bytes_per_sample, sizeof(BufferExtraData));
 	auto samples = src_callback_read(resampler.get(), this->ratio, max_samples, (float *)ret->data);
 	if (samples < 0){

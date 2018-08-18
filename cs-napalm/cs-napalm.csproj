@@ -76,6 +76,7 @@
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utility.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -104,6 +105,33 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\vinyl-record-disc-2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_load.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_next.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_pause.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_play.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_previous.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_seekback.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_seekforth.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="buttons\button_stop.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\napalm.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

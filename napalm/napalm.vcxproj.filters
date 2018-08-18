@@ -78,6 +78,9 @@
     <ClInclude Include="Playlist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CircularQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Decoder.cpp">

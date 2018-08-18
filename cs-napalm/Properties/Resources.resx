@@ -118,7 +118,31 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="vinyl-record-disc-2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\vinyl-record-disc-2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="button_load" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_load.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="button_next" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_next.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="button_pause" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_pause.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="button_play" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_play.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="button_previous" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_previous.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="button_seekback" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_seekback.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="button_seekforth" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_seekforth.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="button_stop" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\buttons\button_stop.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="napalm_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\napalm.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

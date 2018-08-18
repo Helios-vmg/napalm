@@ -27,3 +27,5 @@ DesignTimeResolveAssemblyReferencesInput.cache
 TemporaryGeneratedFile_*.cs
 *.dll
 *DesignTimeResolveAssemblyReferences.cache
+!icons/*
+!cs-napalm/buttons/*

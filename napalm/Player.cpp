@@ -8,13 +8,16 @@
 #include <type_traits>
 #include <chrono>
 
-Player::Player(): queue(this->final_format){
+Player::Player(): queue(this->final_format), notification_queue(1024){
+	this->async_notifications_thread = std::thread([this](){ this->async_notifications_function(); });
 	this->load_plugins();
 	this->open_output();
 }
 
 Player::~Player(){
 	this->stop();
+	this->notification_queue.push(Notification::Destructing);
+	this->async_notifications_thread.join();
 }
 
 void Player::load_file(const char *path){
@@ -103,9 +106,34 @@ void Player::stop(){
 	this->decoding_thread = std::thread();
 }
 
-rational_t Player::get_current_position(){
+void Player::next(){
+	{
+		LOCK_MUTEX(this->mutex);
+		this->playlist.next_track();
+		this->now_playing.reset();
+	}
+	this->queue.flush_queue();
+	this->output_device->flush();
+}
+
+void Player::previous(){
+	{
+		LOCK_MUTEX(this->mutex);
+		this->playlist.previous_track();
+		this->now_playing.reset();
+	}
+	this->queue.flush_queue();
+	this->output_device->flush();
+}
+
+std::pair<rational_t, rational_t> Player::get_current_position(){
 	LOCK_MUTEX(this->mutex);
-	return this->current_time;
+	return {this->current_time, this->current_track_length};
+}
+
+void Player::set_callbacks(const Callbacks &callbacks){
+	LOCK_MUTEX(this->callbacks_mutex);
+	this->callbacks = callbacks;
 }
 
 void Player::decoding_function(){
@@ -154,6 +182,25 @@ void Player::decoding_function(){
 	this->now_playing.reset();
 }
 
+void Player::async_notifications_function(){
+	while (true){
+		auto type = this->notification_queue.pop();
+		switch (type){
+			case Notification::Destructing:
+				break;
+			case Notification::TrackChanged:
+				{
+					LOCK_MUTEX(this->callbacks_mutex);
+					if (this->callbacks.on_track_changed)
+						this->callbacks.on_track_changed(this->callbacks.cb_data);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+}
+
 void Player::load_plugins(){
 	typedef boost::filesystem::directory_iterator D;
 	for (D i("./plugins"), end; i != end; ++i){
@@ -192,7 +239,11 @@ void Player::open_output(){
 						LOCK_MUTEX(this->mutex);
 						if (this->status == Status::Paused)
 							return 0;
-						return this->queue.pop_buffer(this->current_time, dst, size, samples_queued);
+						bool track_changed = false;
+						auto ret = this->queue.pop_buffer(this->current_time, this->current_track_length, track_changed, dst, size, samples_queued);
+						if (track_changed)
+							this->notification_queue.push(Notification::TrackChanged);
+						return ret;
 					},
 					[this](const AudioFormat &af){
 						this->audio_format_changed(af);

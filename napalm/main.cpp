@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "../common/decoder_module.h"
 #include <iostream>
 
 #if defined WIN32 || defined _WIN32 || defined _WIN64
@@ -6,6 +7,10 @@
 #else
 #define EXPORT extern "C"
 #endif
+
+struct CurrentTime{
+	RationalValue current_time, total_time;
+};
 
 EXPORT Player *create_player(){
 	try{
@@ -40,20 +45,24 @@ EXPORT void stop(Player *player){
 	player->stop();
 }
 
-struct Rational{
-	std::int64_t numerator, denominator;
-};
+EXPORT void next(Player *player){
+	player->next();
+}
 
-struct CurrentTime{
-	Rational current_time, total_time;
-};
+EXPORT void previous(Player *player){
+	player->previous();
+}
 
 EXPORT CurrentTime get_current_time(Player *player){
 	auto current = player->get_current_position();
 	CurrentTime ret;
-	ret.current_time.numerator = current.numerator();
-	ret.current_time.denominator = current.denominator();
-	ret.total_time.numerator = -1;
-	ret.total_time.denominator = 1;
+	ret.current_time.numerator = current.first.numerator();
+	ret.current_time.denominator = current.first.denominator();
+	ret.total_time.numerator = current.second.numerator();
+	ret.total_time.denominator = current.second.denominator();
 	return ret;
+}
+
+EXPORT void set_callbacks(Player *player, const Callbacks *callbacks){
+	player->set_callbacks(*callbacks);
 }

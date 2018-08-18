@@ -15,6 +15,7 @@ class DecoderSubstream;
 
 struct BufferExtraData{
 	RationalValue timestamp;
+	RationalValue track_length;
 	AudioBuffer *next;
 	size_t sample_offset;
 	std::uint64_t stream_id;
@@ -69,6 +70,7 @@ class DecoderSubstream : public BufferSource{
 	std::unique_ptr<std::remove_pointer<DecoderSubstreamPtr>::type, substream_close_f> substream_ptr;
 	boost::optional<AudioFormat> format;
 	rational_t current_time = {0, 1};
+	rational_t length;
 	static std::atomic<std::uint64_t> next_stream_id;
 	std::uint64_t stream_id;
 	

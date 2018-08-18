@@ -157,7 +157,7 @@
             this.ArtCoverLabel.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.ArtCoverLabel.BackColor = System.Drawing.Color.Black;
             this.ArtCoverLabel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.ArtCoverLabel.Image = global::cs_napalm.Properties.Resources.vinyl_record_disc_2;
+            this.ArtCoverLabel.Image = global::cs_napalm.Properties.Resources.napalm_icon;
             this.ArtCoverLabel.Location = new System.Drawing.Point(0, 0);
             this.ArtCoverLabel.Margin = new System.Windows.Forms.Padding(0);
             this.ArtCoverLabel.MaximumSize = new System.Drawing.Size(256, 256);
@@ -229,82 +229,90 @@
             // PreviousTrackButton
             // 
             this.PreviousTrackButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.PreviousTrackButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_previous;
+            this.PreviousTrackButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.PreviousTrackButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PreviousTrackButton.Font = new System.Drawing.Font("Lucida Sans Unicode", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PreviousTrackButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PreviousTrackButton.Location = new System.Drawing.Point(1, 1);
             this.PreviousTrackButton.Margin = new System.Windows.Forms.Padding(1);
             this.PreviousTrackButton.Name = "PreviousTrackButton";
             this.PreviousTrackButton.Size = new System.Drawing.Size(37, 37);
             this.PreviousTrackButton.TabIndex = 0;
-            this.PreviousTrackButton.Text = "⏮";
             this.PreviousTrackButton.UseVisualStyleBackColor = true;
+            this.PreviousTrackButton.Click += new System.EventHandler(this.PreviousTrackButton_Click);
             // 
             // LoadButton
             // 
             this.LoadButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.LoadButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_load;
+            this.LoadButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.LoadButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.LoadButton.Font = new System.Drawing.Font("Lucida Sans Unicode", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.LoadButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.LoadButton.Location = new System.Drawing.Point(196, 1);
             this.LoadButton.Margin = new System.Windows.Forms.Padding(1);
             this.LoadButton.Name = "LoadButton";
             this.LoadButton.Size = new System.Drawing.Size(37, 37);
             this.LoadButton.TabIndex = 5;
-            this.LoadButton.Text = "⏏";
             this.LoadButton.UseVisualStyleBackColor = true;
             this.LoadButton.Click += new System.EventHandler(this.LoadButton_Click);
             // 
             // PlayButton
             // 
             this.PlayButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.PlayButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_play;
+            this.PlayButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.PlayButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PlayButton.Font = new System.Drawing.Font("Lucida Sans Unicode", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PlayButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PlayButton.Location = new System.Drawing.Point(40, 1);
             this.PlayButton.Margin = new System.Windows.Forms.Padding(1);
             this.PlayButton.Name = "PlayButton";
             this.PlayButton.Size = new System.Drawing.Size(37, 37);
             this.PlayButton.TabIndex = 1;
-            this.PlayButton.Text = "⏵";
             this.PlayButton.UseVisualStyleBackColor = true;
             this.PlayButton.Click += new System.EventHandler(this.PlayButton_Click);
             // 
             // NextTrackButton
             // 
             this.NextTrackButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.NextTrackButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_next;
+            this.NextTrackButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.NextTrackButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.NextTrackButton.Font = new System.Drawing.Font("Lucida Sans Unicode", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.NextTrackButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.NextTrackButton.Location = new System.Drawing.Point(157, 1);
             this.NextTrackButton.Margin = new System.Windows.Forms.Padding(1);
             this.NextTrackButton.Name = "NextTrackButton";
             this.NextTrackButton.Size = new System.Drawing.Size(37, 37);
             this.NextTrackButton.TabIndex = 4;
-            this.NextTrackButton.Text = "⏭";
             this.NextTrackButton.UseVisualStyleBackColor = true;
+            this.NextTrackButton.Click += new System.EventHandler(this.NextTrackButton_Click);
             // 
             // PauseButton
             // 
             this.PauseButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.PauseButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_pause;
+            this.PauseButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.PauseButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PauseButton.Font = new System.Drawing.Font("Lucida Sans Unicode", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PauseButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PauseButton.Location = new System.Drawing.Point(79, 1);
             this.PauseButton.Margin = new System.Windows.Forms.Padding(1);
             this.PauseButton.Name = "PauseButton";
             this.PauseButton.Size = new System.Drawing.Size(37, 37);
             this.PauseButton.TabIndex = 2;
-            this.PauseButton.Text = "⏸";
             this.PauseButton.UseVisualStyleBackColor = true;
             this.PauseButton.Click += new System.EventHandler(this.PauseButton_Click);
             // 
             // StopButton
             // 
             this.StopButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.StopButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_stop;
+            this.StopButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.StopButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.StopButton.Font = new System.Drawing.Font("Lucida Sans Unicode", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.StopButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.StopButton.Location = new System.Drawing.Point(118, 1);
             this.StopButton.Margin = new System.Windows.Forms.Padding(1);
             this.StopButton.Name = "StopButton";
             this.StopButton.Size = new System.Drawing.Size(37, 37);
             this.StopButton.TabIndex = 3;
-            this.StopButton.Text = "⏹";
             this.StopButton.UseVisualStyleBackColor = true;
             this.StopButton.Click += new System.EventHandler(this.StopButton_Click);
             // 

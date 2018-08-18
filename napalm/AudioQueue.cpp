@@ -22,7 +22,7 @@ void AudioQueue::set_expected_format(const AudioFormat &format){
 void AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format){
 	while (true){
 		{
-			std::lock_guard<std::mutex> lg(this->mutex);
+			LOCK_MUTEX(this->mutex);
 			if (format != this->expected_format)
 				return;
 			if (this->size < this->limit){
@@ -41,10 +41,10 @@ void AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format){
 	clear_queue(this->exit_queue);
 }
 
-size_t AudioQueue::pop_buffer(rational_t &time, void *void_dst, size_t size, size_t samples_queued){
+size_t AudioQueue::pop_buffer(rational_t &time, rational_t &total, bool &track_changed, void *void_dst, size_t size, size_t samples_queued){
 	size_t ret = 0;
 	bool signal = false;
-	bool set = false;
+	bool time_set = false;
 	{
 		LOCK_MUTEX(this->mutex);
 		auto dst = (std::uint8_t *)void_dst;
@@ -53,10 +53,15 @@ size_t AudioQueue::pop_buffer(rational_t &time, void *void_dst, size_t size, siz
 			if (!this->head)
 				break;
 			auto &extra = get_extra_data<BufferExtraData>(this->head);
-			if (!set){
+			if (!time_set){
 				time = rational_t(extra.timestamp.numerator, extra.timestamp.denominator);
 				time += rational_t(extra.sample_offset, this->format->freq);
-				set = true;
+				total = rational_t(extra.track_length.numerator, extra.track_length.denominator);
+				time_set = true;
+			}
+			if (extra.stream_id != this->current_stream_id){
+				this->current_stream_id = extra.stream_id;
+				track_changed = true;
 			}
 			auto copy_size = std::min(size, this->head->sample_count - extra.sample_offset);
 			memcpy(dst, this->head->data + extra.sample_offset * sample_size, copy_size * sample_size);
@@ -78,7 +83,7 @@ size_t AudioQueue::pop_buffer(rational_t &time, void *void_dst, size_t size, siz
 	}
 	if (signal || !ret)
 		this->event.signal();
-	if (!set)
+	if (!time_set)
 		time = rational_t(-1, 1);
 	return ret;
 }
