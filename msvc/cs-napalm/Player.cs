@@ -46,23 +46,6 @@ namespace cs_napalm
             public NumericTrackInfo numeric_track_info;
         }
 
-        public class BasicTrackInfo
-        {
-            public string Album;
-            public string TrackTitle;
-            public string TrackNumber;
-            public string TrackArtist;
-            public string Date;
-            public string TrackId;
-            public string Path;
-            public int TrackNumberInt;
-            public double Duration;
-            public double TrackGain;
-            public double TrackPeak;
-            public double AlbumGain;
-            public double AlbumPeak;
-        }
-
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr create_player();
 

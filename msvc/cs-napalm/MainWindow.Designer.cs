@@ -60,6 +60,10 @@
             this.TrackTitleLabel = new System.Windows.Forms.Label();
             this.TrackArtistLabel = new System.Windows.Forms.Label();
             this.AlbumLabel = new System.Windows.Forms.Label();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.preferencesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tableLayoutPanel3.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -67,6 +71,7 @@
             this.tableLayoutPanel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.SeekBar)).BeginInit();
             this.tableLayoutPanel6.SuspendLayout();
+            this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // statusStrip1
@@ -84,12 +89,12 @@
             this.tableLayoutPanel3.Controls.Add(this.PlaylistView, 0, 1);
             this.tableLayoutPanel3.Controls.Add(this.tableLayoutPanel1, 0, 0);
             this.tableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel3.Location = new System.Drawing.Point(0, 0);
+            this.tableLayoutPanel3.Location = new System.Drawing.Point(0, 24);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
             this.tableLayoutPanel3.RowCount = 2;
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(771, 520);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(771, 496);
             this.tableLayoutPanel3.TabIndex = 10;
             // 
             // PlaylistView
@@ -104,7 +109,7 @@
             this.PlaylistView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.PlaylistView.Location = new System.Drawing.Point(3, 265);
             this.PlaylistView.Name = "PlaylistView";
-            this.PlaylistView.Size = new System.Drawing.Size(765, 252);
+            this.PlaylistView.Size = new System.Drawing.Size(765, 228);
             this.PlaylistView.TabIndex = 9;
             this.PlaylistView.UseCompatibleStateImageBehavior = false;
             this.PlaylistView.View = System.Windows.Forms.View.Details;
@@ -418,9 +423,9 @@
             this.TimeLabel.AutoSize = true;
             this.TimeLabel.Location = new System.Drawing.Point(59, 60);
             this.TimeLabel.Name = "TimeLabel";
-            this.TimeLabel.Size = new System.Drawing.Size(35, 13);
+            this.TimeLabel.Size = new System.Drawing.Size(27, 13);
             this.TimeLabel.TabIndex = 5;
-            this.TimeLabel.Text = "label6";
+            this.TimeLabel.Text = "N/A";
             // 
             // DurationLabel
             // 
@@ -428,9 +433,9 @@
             this.DurationLabel.AutoSize = true;
             this.DurationLabel.Location = new System.Drawing.Point(59, 79);
             this.DurationLabel.Name = "DurationLabel";
-            this.DurationLabel.Size = new System.Drawing.Size(35, 13);
+            this.DurationLabel.Size = new System.Drawing.Size(27, 13);
             this.DurationLabel.TabIndex = 6;
-            this.DurationLabel.Text = "label7";
+            this.DurationLabel.Text = "N/A";
             // 
             // TrackTitleLabel
             // 
@@ -459,6 +464,38 @@
             this.AlbumLabel.Size = new System.Drawing.Size(0, 13);
             this.AlbumLabel.TabIndex = 9;
             // 
+            // menuStrip1
+            // 
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileToolStripMenuItem});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(771, 24);
+            this.menuStrip1.TabIndex = 11;
+            this.menuStrip1.Text = "menuStrip1";
+            // 
+            // fileToolStripMenuItem
+            // 
+            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.preferencesToolStripMenuItem,
+            this.exitToolStripMenuItem});
+            this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.fileToolStripMenuItem.Text = "&File";
+            // 
+            // exitToolStripMenuItem
+            // 
+            this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Text = "&Exit";
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            // 
+            // preferencesToolStripMenuItem
+            // 
+            this.preferencesToolStripMenuItem.Name = "preferencesToolStripMenuItem";
+            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.preferencesToolStripMenuItem.Text = "&Preferences...";
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -467,6 +504,8 @@
             this.ClientSize = new System.Drawing.Size(771, 542);
             this.Controls.Add(this.tableLayoutPanel3);
             this.Controls.Add(this.statusStrip1);
+            this.Controls.Add(this.menuStrip1);
+            this.MainMenuStrip = this.menuStrip1;
             this.MinimumSize = new System.Drawing.Size(787, 581);
             this.Name = "MainWindow";
             this.Text = "Form1";
@@ -481,6 +520,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.SeekBar)).EndInit();
             this.tableLayoutPanel6.ResumeLayout(false);
             this.tableLayoutPanel6.PerformLayout();
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -519,6 +560,10 @@
         private System.Windows.Forms.Label TrackTitleLabel;
         private System.Windows.Forms.Label TrackArtistLabel;
         private System.Windows.Forms.Label AlbumLabel;
+        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem preferencesToolStripMenuItem;
     }
 }
 

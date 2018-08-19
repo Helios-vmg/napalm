@@ -113,9 +113,9 @@ namespace cs_napalm
             SetBasicMetadata(info);
         }
 
-        private delegate void SetBasicMetadataDelegate(Player.BasicTrackInfo info);
+        private delegate void SetBasicMetadataDelegate(BasicTrackInfo info);
 
-        private void SetBasicMetadata(Player.BasicTrackInfo info)
+        private void SetBasicMetadata(BasicTrackInfo info)
         {
             if (TrackTitleLabel.InvokeRequired)
             {
@@ -125,6 +125,11 @@ namespace cs_napalm
             TrackTitleLabel.Text = info.TrackTitle;
             TrackArtistLabel.Text = info.TrackArtist;
             AlbumLabel.Text = info.Album;
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
         }
     }
 }
