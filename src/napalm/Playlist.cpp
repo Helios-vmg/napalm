@@ -12,4 +12,5 @@ Track::Track(Decoder &decoder, int subtrack){
 	auto temp = decoder.get_substream(subtrack);
 	this->format = temp->get_audio_format();
 	this->duration = temp->get_length_in_seconds();
+	this->metadata = temp->get_metadata();
 }

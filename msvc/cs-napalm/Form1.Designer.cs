@@ -1,6 +1,6 @@
 ﻿namespace cs_napalm
 {
-    partial class Form1
+    partial class MainWindow
     {
         /// <summary>
         /// Required designer variable.
@@ -57,6 +57,9 @@
             this.label5 = new System.Windows.Forms.Label();
             this.TimeLabel = new System.Windows.Forms.Label();
             this.DurationLabel = new System.Windows.Forms.Label();
+            this.TrackTitleLabel = new System.Windows.Forms.Label();
+            this.TrackArtistLabel = new System.Windows.Forms.Label();
+            this.AlbumLabel = new System.Windows.Forms.Label();
             this.tableLayoutPanel3.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -232,7 +235,7 @@
             this.PreviousTrackButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_previous;
             this.PreviousTrackButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.PreviousTrackButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PreviousTrackButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PreviousTrackButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PreviousTrackButton.Location = new System.Drawing.Point(1, 1);
             this.PreviousTrackButton.Margin = new System.Windows.Forms.Padding(1);
             this.PreviousTrackButton.Name = "PreviousTrackButton";
@@ -247,7 +250,7 @@
             this.LoadButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_load;
             this.LoadButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.LoadButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.LoadButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.LoadButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.LoadButton.Location = new System.Drawing.Point(196, 1);
             this.LoadButton.Margin = new System.Windows.Forms.Padding(1);
             this.LoadButton.Name = "LoadButton";
@@ -262,7 +265,7 @@
             this.PlayButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_play;
             this.PlayButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.PlayButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PlayButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PlayButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PlayButton.Location = new System.Drawing.Point(40, 1);
             this.PlayButton.Margin = new System.Windows.Forms.Padding(1);
             this.PlayButton.Name = "PlayButton";
@@ -277,7 +280,7 @@
             this.NextTrackButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_next;
             this.NextTrackButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.NextTrackButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.NextTrackButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.NextTrackButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.NextTrackButton.Location = new System.Drawing.Point(157, 1);
             this.NextTrackButton.Margin = new System.Windows.Forms.Padding(1);
             this.NextTrackButton.Name = "NextTrackButton";
@@ -292,7 +295,7 @@
             this.PauseButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_pause;
             this.PauseButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.PauseButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PauseButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.PauseButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.PauseButton.Location = new System.Drawing.Point(79, 1);
             this.PauseButton.Margin = new System.Windows.Forms.Padding(1);
             this.PauseButton.Name = "PauseButton";
@@ -307,7 +310,7 @@
             this.StopButton.BackgroundImage = global::cs_napalm.Properties.Resources.button_stop;
             this.StopButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.StopButton.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.StopButton.Font = new System.Drawing.Font("DejaVu Sans Mono", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.StopButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.StopButton.Location = new System.Drawing.Point(118, 1);
             this.StopButton.Margin = new System.Windows.Forms.Padding(1);
             this.StopButton.Name = "StopButton";
@@ -338,6 +341,9 @@
             this.tableLayoutPanel6.Controls.Add(this.label5, 0, 4);
             this.tableLayoutPanel6.Controls.Add(this.TimeLabel, 1, 3);
             this.tableLayoutPanel6.Controls.Add(this.DurationLabel, 1, 4);
+            this.tableLayoutPanel6.Controls.Add(this.TrackTitleLabel, 1, 0);
+            this.tableLayoutPanel6.Controls.Add(this.TrackArtistLabel, 1, 1);
+            this.tableLayoutPanel6.Controls.Add(this.AlbumLabel, 1, 2);
             this.tableLayoutPanel6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel6.Location = new System.Drawing.Point(3, 3);
             this.tableLayoutPanel6.Name = "tableLayoutPanel6";
@@ -426,7 +432,34 @@
             this.DurationLabel.TabIndex = 6;
             this.DurationLabel.Text = "label7";
             // 
-            // Form1
+            // TrackTitleLabel
+            // 
+            this.TrackTitleLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.TrackTitleLabel.AutoSize = true;
+            this.TrackTitleLabel.Location = new System.Drawing.Point(59, 3);
+            this.TrackTitleLabel.Name = "TrackTitleLabel";
+            this.TrackTitleLabel.Size = new System.Drawing.Size(0, 13);
+            this.TrackTitleLabel.TabIndex = 7;
+            // 
+            // TrackArtistLabel
+            // 
+            this.TrackArtistLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.TrackArtistLabel.AutoSize = true;
+            this.TrackArtistLabel.Location = new System.Drawing.Point(59, 22);
+            this.TrackArtistLabel.Name = "TrackArtistLabel";
+            this.TrackArtistLabel.Size = new System.Drawing.Size(0, 13);
+            this.TrackArtistLabel.TabIndex = 8;
+            // 
+            // AlbumLabel
+            // 
+            this.AlbumLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.AlbumLabel.AutoSize = true;
+            this.AlbumLabel.Location = new System.Drawing.Point(59, 41);
+            this.AlbumLabel.Name = "AlbumLabel";
+            this.AlbumLabel.Size = new System.Drawing.Size(0, 13);
+            this.AlbumLabel.TabIndex = 9;
+            // 
+            // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -435,7 +468,7 @@
             this.Controls.Add(this.tableLayoutPanel3);
             this.Controls.Add(this.statusStrip1);
             this.MinimumSize = new System.Drawing.Size(787, 581);
-            this.Name = "Form1";
+            this.Name = "MainWindow";
             this.Text = "Form1";
             this.tableLayoutPanel3.ResumeLayout(false);
             this.tableLayoutPanel3.PerformLayout();
@@ -483,6 +516,9 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label TimeLabel;
         private System.Windows.Forms.Label DurationLabel;
+        private System.Windows.Forms.Label TrackTitleLabel;
+        private System.Windows.Forms.Label TrackArtistLabel;
+        private System.Windows.Forms.Label AlbumLabel;
     }
 }
 

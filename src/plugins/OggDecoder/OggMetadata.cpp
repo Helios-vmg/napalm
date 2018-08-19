@@ -10,6 +10,7 @@ std::string OggMetadata::OPUS                   = "OPUS";
 std::string OggMetadata::PART                   = "PART";
 std::string OggMetadata::TITLE                  = "TITLE";
 std::string OggMetadata::TRACKNUMBER            = "TRACKNUMBER";
+std::string OggMetadata::empty_string;
 static std::string REPLAYGAIN_TRACK_GAIN        = "REPLAYGAIN_TRACK_GAIN";
 static std::string REPLAYGAIN_TRACK_PEAK        = "REPLAYGAIN_TRACK_PEAK";
 static std::string REPLAYGAIN_ALBUM_GAIN        = "REPLAYGAIN_ALBUM_GAIN";
@@ -21,25 +22,50 @@ static const std::string * const replaygain_strings[] = {
 	&REPLAYGAIN_ALBUM_PEAK,
 };
 
+template <typename T1, typename T2, typename T3>
+typename std::enable_if<std::is_same<T2, T3>::value, bool>::type
+find_in_map(const T1 &map, const T2 &what, T3 &dst){
+	auto it = map.find(what);
+	if (it == map.end())
+		return false;
+	dst = it->second;
+	return true;
+}
+
+template <typename T1, typename T2, typename T3, typename F>
+typename std::enable_if<!std::is_same<T2, T3>::value, bool>::type
+find_in_map(const T1 &map, const T2 &what, T3 &dst, const F &f){
+	auto it = map.find(what);
+	if (it == map.end())
+		return false;
+	return f(dst, it->second);
+}
+
 bool string_to_double(double &dst, const std::string &src){
 	std::stringstream stream(src);
 	return !!(stream >> dst);
 }
 
-bool OggMetadata::track_gain(double &dst){
-	return find_in_map(this->map, REPLAYGAIN_TRACK_GAIN, dst, string_to_double);
+
+double find_double(const std::map<std::string, std::string> &map, const std::string &key){
+	double ret;
+	return find_in_map(map, key, ret, string_to_double) ? ret : std::nan("");
 }
 
-bool OggMetadata::track_peak(double &dst){
-	return find_in_map(this->map, REPLAYGAIN_TRACK_PEAK, dst, string_to_double);
+double OggMetadata::track_gain(){
+	return find_double(this->map, REPLAYGAIN_TRACK_GAIN);
 }
 
-bool OggMetadata::album_gain(double &dst){
-	return find_in_map(this->map, REPLAYGAIN_ALBUM_GAIN, dst, string_to_double);
+double OggMetadata::track_peak(){
+	return find_double(this->map, REPLAYGAIN_TRACK_PEAK);
 }
 
-bool OggMetadata::album_peak(double &dst){
-	return find_in_map(this->map, REPLAYGAIN_ALBUM_PEAK, dst, string_to_double);
+double OggMetadata::album_gain(){
+	return find_double(this->map, REPLAYGAIN_ALBUM_GAIN);
+}
+
+double OggMetadata::album_peak(){
+	return find_double(this->map, REPLAYGAIN_ALBUM_PEAK);
 }
 
 std::string OggMetadata::track_title(){
@@ -171,10 +197,15 @@ void OggMetadata::add_vorbis_comment(const void *buffer, size_t length){
 	this->add(field_name, field_value);
 }
 
-bool OggMetadata::picture(unsigned char *&buffer, size_t &length){
-	if (!this->ogg_picture.size())
+std::unique_ptr<OggMetadataIterator> OggMetadata::get_iterator(){
+	return std::make_unique<OggMetadataIterator>(*this->decoder, this->map.begin(), this->map.end());
+}
+
+bool OggMetadataIterator::next(std::string &key, std::string &value){
+	if (this->current == this->end)
 		return false;
-	buffer = &this->ogg_picture[0];
-	length = this->ogg_picture.size();
+	auto it = this->current++;
+	key = it->first;
+	value = it->second;
 	return true;
 }

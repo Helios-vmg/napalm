@@ -55,6 +55,9 @@ public:
 		return this->ogg_parent;
 	}
 	void set_number_format_hint(NumberFormat nf);
+	OggMetadata *get_metadata(){
+		return new OggMetadata(this->metadata);
+	}
 };
 
 void release(AudioBuffer *);

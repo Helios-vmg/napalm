@@ -83,8 +83,8 @@ OggDecoderSubstream::OggDecoderSubstream(
 			const rational_t &first_moment,
 			const rational_t &seconds_length):
 		DecoderSubstream(parent, index, first_sample, length, first_moment, seconds_length),
-		ogg_parent(parent),
-		metadata(parent.get_path()){
+		metadata(parent),
+		ogg_parent(parent){
 
 	auto ogg_file = this->ogg_parent.get_ogg_file();
 

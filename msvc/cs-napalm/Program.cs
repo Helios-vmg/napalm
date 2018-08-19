@@ -14,9 +14,18 @@ namespace cs_napalm
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            MainWindow window = null;
+            try
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(window = new MainWindow());
+            }
+            finally
+            {
+                if (window != null)
+                    window.Leaving();
+            }
         }
     }
 }

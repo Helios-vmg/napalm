@@ -13,12 +13,12 @@ using cs_napalm.Properties;
 
 namespace cs_napalm
 {
-    public partial class Form1 : Form
+    public partial class MainWindow : Form
     {
         private Player _player;
         private Timer _timer = new Timer();
 
-        public Form1()
+        public MainWindow()
         {
             InitializeComponent();
 
@@ -28,7 +28,12 @@ namespace cs_napalm
             _timer.Tick += UpdateTime;
             _timer.Enabled = true;
         }
-        
+
+        public void Leaving()
+        {
+            _player.Dispose();
+        }
+
         private void LoadButton_Click(object sender, EventArgs e)
         {
             var d = new OpenFileDialog();
@@ -103,14 +108,23 @@ namespace cs_napalm
             var state = _player.GetPlaylistState();
             var info = _player.GetBasicTrackInfo(state.Item2);
             if (info == null)
-            {
-                MessageBox.Show("Track changed, no metadata.");
-            }
-            else
-            {
-                MessageBox.Show($"Track changed. Title: {info.TrackTitle}, Duration: {Utility.AbsoluteFormatTime(info.Duration, true)}");
-            }
+                return;
+
+            SetBasicMetadata(info);
         }
 
+        private delegate void SetBasicMetadataDelegate(Player.BasicTrackInfo info);
+
+        private void SetBasicMetadata(Player.BasicTrackInfo info)
+        {
+            if (TrackTitleLabel.InvokeRequired)
+            {
+                TrackArtistLabel.Invoke(new SetBasicMetadataDelegate(SetBasicMetadata), info);
+                return;
+            }
+            TrackTitleLabel.Text = info.TrackTitle;
+            TrackArtistLabel.Text = info.TrackArtist;
+            AlbumLabel.Text = info.Album;
+        }
     }
 }

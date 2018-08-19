@@ -1,4 +1,5 @@
 #include <decoder_module.h>
+#include <metadata_module.h>
 #include "OggDecoder.h"
 
 #if defined WIN32 || defined _WIN32 || defined _WIN64
@@ -21,7 +22,8 @@ EXPORT void DestroyModule(ModulePtr instance){
 
 static const char **get_module_types(ModulePtr){
 	static const char *table[] = {
-		"decoder",
+		DECODER_MODULE_TYPE,
+		METADATA_MODULE_TYPE,
 		nullptr,
 	};
 	return table;
@@ -167,7 +169,119 @@ static RationalValue substream_seek_to_second(DecoderSubstreamPtr instance, Rati
 	return {-1, 1};
 }
 
+MetadataPtr decoder_substream_get_metadata(DecoderSubstreamPtr instance){
+	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &module = substream.get_parent().get_module();
+	try{
+		return substream.get_metadata();
+	}catch (std::exception &e){
+		module.set_error(e.what());
+	}
+	return nullptr;
+}
+
+void metadata_destroy(MetadataPtr instance){
+	delete (OggMetadata *)instance;
+}
+
+void metadata_release_buffer(MetadataBuffer buffer){
+	delete[] buffer.ptr;
+}
+
+MetadataBuffer to_MetadataBuffer(const std::string &s){
+	MetadataBuffer ret;
+	ret.size = s.size();
+	size_t size = ret.size ? ret.size : 1;
+	ret.ptr = new std::uint8_t[size];
+	if (ret.size)
+		memcpy(ret.ptr, &s[0], ret.size);
+	return ret;
+}
+
+MetadataBuffer to_MetadataBuffer(const std::vector<std::uint8_t> &v){
+	MetadataBuffer ret;
+	ret.size = v.size();
+	size_t size = ret.size ? ret.size : 1;
+	ret.ptr = new std::uint8_t[size];
+	if (ret.size)
+		memcpy(ret.ptr, &v[0], ret.size);
+	return ret;
+}
+
+#define DEFINE_METADATA_BUFFER_GETTER(x) \
+	MetadataBuffer metadata_get_##x(MetadataPtr instance){ \
+		auto &metadata = *(OggMetadata *)instance; \
+		auto &module = metadata.get_decoder().get_module(); \
+		try{ \
+			return to_MetadataBuffer(metadata.x()); \
+		}catch (std::exception &e){ \
+			module.set_error(e.what()); \
+		} \
+		return { nullptr, 0 }; \
+	}
+
+#define DEFINE_METADATA_DOUBLE_GETTER(x) \
+	double metadata_get_##x(MetadataPtr instance){ \
+		auto &metadata = *(OggMetadata *)instance; \
+		auto &module = metadata.get_decoder().get_module(); \
+		try{ \
+			return metadata.x(); \
+		}catch (std::exception &e){ \
+			module.set_error(e.what()); \
+		} \
+		return std::nan(""); \
+	}
+
+DEFINE_METADATA_BUFFER_GETTER(album)
+DEFINE_METADATA_BUFFER_GETTER(track_title)
+DEFINE_METADATA_BUFFER_GETTER(track_number)
+DEFINE_METADATA_BUFFER_GETTER(track_artist)
+DEFINE_METADATA_BUFFER_GETTER(date)
+DEFINE_METADATA_BUFFER_GETTER(front_cover)
+DEFINE_METADATA_DOUBLE_GETTER(track_gain)
+DEFINE_METADATA_DOUBLE_GETTER(track_peak)
+DEFINE_METADATA_DOUBLE_GETTER(album_gain)
+DEFINE_METADATA_DOUBLE_GETTER(album_peak)
+
+MetadataIteratorPtr metadata_get_iterator(MetadataPtr instance){
+	auto &metadata = *(OggMetadata *)instance;
+	auto &module = metadata.get_decoder().get_module();
+	try{
+		return metadata.get_iterator().release();
+	}catch (std::exception &e){
+		module.set_error(e.what());
+	}
+	return nullptr;
+}
+
+void metadata_iterator_release(MetadataIteratorPtr instance){
+	delete (OggMetadataIterator *)instance;
+}
+
+int metadata_iterator_get_next(MetadataIteratorPtr instance, MetadataKeyValue *kv){
+	auto &iterator = *(OggMetadataIterator *)instance;
+	auto &module = iterator.get_decoder().get_module();
+	MetadataBuffer mb_key{ nullptr, 0 },
+		mb_value{ nullptr, 0 };
+	try{
+		std::string key, value;
+		if (!iterator.next(key, value))
+			return 0;
+		mb_key = to_MetadataBuffer(key);
+		mb_value = to_MetadataBuffer(value);
+		kv->key = mb_key;
+		kv->value = mb_value;
+		return 1;
+	}catch (std::exception &e){
+		module.set_error(e.what());
+		metadata_release_buffer(mb_key);
+		metadata_release_buffer(mb_value);
+	}
+	return -1;
+}
+
 #define EXPORT_MODULE_FUNCTION(x) { #x , x }
+#define EXPORT_METADATA_GETTER(x) EXPORT_MODULE_FUNCTION(metadata_get_##x)
 
 EXPORT const ModuleExportEntry *GetFunctionTable(ModulePtr){
 	static const ModuleExportEntry ret[] = {
@@ -189,6 +303,23 @@ EXPORT const ModuleExportEntry *GetFunctionTable(ModulePtr){
 		EXPORT_MODULE_FUNCTION(substream_get_length_in_samples),
 		EXPORT_MODULE_FUNCTION(substream_seek_to_sample),
 		EXPORT_MODULE_FUNCTION(substream_seek_to_second),
+
+		EXPORT_MODULE_FUNCTION(decoder_substream_get_metadata),
+		EXPORT_MODULE_FUNCTION(metadata_destroy),
+		EXPORT_MODULE_FUNCTION(metadata_release_buffer),
+		EXPORT_METADATA_GETTER(album),
+		EXPORT_METADATA_GETTER(track_title),
+		EXPORT_METADATA_GETTER(track_number),
+		EXPORT_METADATA_GETTER(track_artist),
+		EXPORT_METADATA_GETTER(date),
+		EXPORT_METADATA_GETTER(track_gain),
+		EXPORT_METADATA_GETTER(track_peak),
+		EXPORT_METADATA_GETTER(album_gain),
+		EXPORT_METADATA_GETTER(album_peak),
+		EXPORT_METADATA_GETTER(front_cover),
+		EXPORT_MODULE_FUNCTION(metadata_get_iterator),
+		EXPORT_MODULE_FUNCTION(metadata_iterator_release),
+		EXPORT_MODULE_FUNCTION(metadata_iterator_get_next),
 
 		{ nullptr, nullptr },
 	};

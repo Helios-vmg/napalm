@@ -12,6 +12,7 @@
 
 class InputStream;
 class DecoderSubstream;
+class GenericMetadata;
 
 struct BufferExtraData{
 	RationalValue timestamp;
@@ -20,10 +21,13 @@ struct BufferExtraData{
 	std::uint64_t stream_id;
 };
 
+class MetadataModule;
+
 class DecoderModule{
 	friend class Decoder;
 	friend class DecoderSubstream;
 	std::shared_ptr<Module> module;
+	std::shared_ptr<MetadataModule> metadata_module;
 	std::unordered_set<std::string> supported_extensions;
 
 	DEFINE_FP(decoder_get_supported_extensions);
@@ -41,6 +45,7 @@ class DecoderModule{
 	DEFINE_FP(substream_seek_to_second);
 public:
 	DecoderModule(const std::shared_ptr<Module> &module);
+	~DecoderModule();
 	const std::unordered_set<std::string> &get_supported_extensions() const{
 		return this->supported_extensions;
 	}
@@ -53,8 +58,9 @@ class Decoder{
 	DecoderModule &module;
 	std::unique_ptr<std::remove_pointer<DecoderPtr>::type, decoder_close_f> decoder_ptr;
 	std::unique_ptr<InputStream> stream;
+	std::shared_ptr<MetadataModule> metadata_module;
 
-	Decoder(DecoderModule &module, std::unique_ptr<InputStream> &&stream);
+	Decoder(DecoderModule &module, std::unique_ptr<InputStream> &&stream, const std::shared_ptr<MetadataModule> &metadata_module);
 public:
 	int get_substreams_count();
 	std::unique_ptr<DecoderSubstream> get_substream(int index);
@@ -65,15 +71,17 @@ public:
 
 class DecoderSubstream : public BufferSource{
 	friend class Decoder;
+	friend class ExternalMetadata;
 	DecoderModule &module;
 	std::unique_ptr<std::remove_pointer<DecoderSubstreamPtr>::type, substream_close_f> substream_ptr;
+	std::shared_ptr<MetadataModule> metadata_module;
 	boost::optional<AudioFormat> format;
 	rational_t current_time = {0, 1};
 	rational_t length;
 	static std::atomic<std::uint64_t> next_stream_id;
 	std::uint64_t stream_id;
 	
-	DecoderSubstream(Decoder &decoder, int index);
+	DecoderSubstream(Decoder &decoder, int index, const std::shared_ptr<MetadataModule> &metadata_module);
 public:
 	AudioFormat get_audio_format();
 	void set_number_format_hint(NumberFormat);
@@ -88,6 +96,7 @@ public:
 	std::uint64_t get_stream_id() const{
 		return this->stream_id;
 	}
+	std::unique_ptr<GenericMetadata> get_metadata();
 };
 
 void release_buffer(AudioBuffer *rr);

@@ -178,6 +178,7 @@
     <ClInclude Include="..\..\src\common\base64.hpp" />
     <ClInclude Include="..\..\src\common\decoder.hpp" />
     <ClInclude Include="..\..\src\common\GenericMetadata.hpp" />
+    <ClInclude Include="..\..\src\common\metadata_module.h" />
     <ClInclude Include="..\..\src\common\WrappedExternalIO.hpp" />
     <ClInclude Include="..\..\src\plugins\OggDecoder\Module.h" />
     <ClInclude Include="..\..\src\plugins\OggDecoder\OggDecoder.h" />

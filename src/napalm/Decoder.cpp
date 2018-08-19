@@ -1,6 +1,8 @@
 #include "Decoder.h"
 #include "Module.h"
-#include "../common/decoder_module.h"
+#include "MetadataModule.h"
+#include <decoder_module.h>
+#include <metadata_module.h>
 
 std::atomic<std::uint64_t> DecoderSubstream::next_stream_id(0);
 
@@ -44,16 +46,22 @@ DecoderModule::DecoderModule(const std::shared_ptr<Module> &module): module(modu
 
 	for (auto table = this->decoder_get_supported_extensions(this->module.get()); *table; table++)
 		this->supported_extensions.insert(*table);
+
+	if (this->module->module_supports(METADATA_MODULE_TYPE))
+		this->metadata_module.reset(new MetadataModule(this->module));
 }
+
+DecoderModule::~DecoderModule(){}
 
 std::shared_ptr<Decoder> DecoderModule::open(std::unique_ptr<InputStream> &&stream){
-	return std::shared_ptr<Decoder>(new Decoder(*this, std::move(stream)));
+	return std::shared_ptr<Decoder>(new Decoder(*this, std::move(stream), this->metadata_module));
 }
 
-Decoder::Decoder(DecoderModule &module, std::unique_ptr<InputStream> &&stream):
+Decoder::Decoder(DecoderModule &module, std::unique_ptr<InputStream> &&stream, const std::shared_ptr<MetadataModule> &metadata_module):
 		module(module),
 		decoder_ptr(nullptr, module.decoder_close),
-		stream(std::move(stream)){
+		stream(std::move(stream)),
+		metadata_module(metadata_module){
 	
 	auto ptr = module.module->get_pointer();
 	auto path = this->stream->get_path().c_str();
@@ -70,12 +78,13 @@ int Decoder::get_substreams_count(){
 }
 
 std::unique_ptr<DecoderSubstream> Decoder::get_substream(int index){
-	return std::unique_ptr<DecoderSubstream>(new DecoderSubstream(*this, index));
+	return std::unique_ptr<DecoderSubstream>(new DecoderSubstream(*this, index, this->metadata_module));
 }
 
-DecoderSubstream::DecoderSubstream(Decoder &decoder, int index):
+DecoderSubstream::DecoderSubstream(Decoder &decoder, int index, const std::shared_ptr<MetadataModule> &metadata_module):
 		module(decoder.module),
 		substream_ptr(nullptr, decoder.module.substream_close),
+		metadata_module(metadata_module),
 		stream_id(this->next_stream_id++){
 
 	this->substream_ptr.reset(this->module.decoder_get_substream(decoder.decoder_ptr.get(), index));
@@ -84,6 +93,12 @@ DecoderSubstream::DecoderSubstream(Decoder &decoder, int index):
 		throw std::runtime_error("Unknown error decoding " + decoder.stream->get_path());
 	}
 	this->length = this->get_length_in_seconds();
+}
+
+std::unique_ptr<GenericMetadata> DecoderSubstream::get_metadata(){
+	if (!this->metadata_module)
+		return nullptr;
+	return this->metadata_module->get_metadata(*this);
 }
 
 AudioFormat DecoderSubstream::get_audio_format(){

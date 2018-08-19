@@ -3,7 +3,7 @@
 #include <string>
 #include "../common/audio_format.h"
 #include "Decoder.h"
-#include "Metadata.h"
+#include "MetadataModule.h"
 #include <vector>
 
 class Track{
