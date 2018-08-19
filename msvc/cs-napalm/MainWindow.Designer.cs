@@ -62,8 +62,8 @@
             this.AlbumLabel = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.preferencesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tableLayoutPanel3.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -333,6 +333,9 @@
             this.SeekBar.Size = new System.Drawing.Size(251, 45);
             this.SeekBar.TabIndex = 8;
             this.SeekBar.TickStyle = System.Windows.Forms.TickStyle.Both;
+            this.SeekBar.Scroll += new System.EventHandler(this.SeekBar_Scroll);
+            this.SeekBar.MouseDown += new System.Windows.Forms.MouseEventHandler(this.SeekBar_MouseDown);
+            this.SeekBar.MouseUp += new System.Windows.Forms.MouseEventHandler(this.SeekBar_MouseUp);
             // 
             // tableLayoutPanel6
             // 
@@ -483,18 +486,18 @@
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "&File";
             // 
-            // exitToolStripMenuItem
-            // 
-            this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.exitToolStripMenuItem.Text = "&Exit";
-            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
-            // 
             // preferencesToolStripMenuItem
             // 
             this.preferencesToolStripMenuItem.Name = "preferencesToolStripMenuItem";
-            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.preferencesToolStripMenuItem.Text = "&Preferences...";
+            // 
+            // exitToolStripMenuItem
+            // 
+            this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
+            this.exitToolStripMenuItem.Text = "&Exit";
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
             // MainWindow
             // 

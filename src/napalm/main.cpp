@@ -83,3 +83,7 @@ EXPORT BasicTrackInfo *get_basic_track_info(Player *player, int playlist_positio
 EXPORT void release_basic_track_info(BasicTrackInfo *info){
 	delete info;
 }
+
+EXPORT void seek_to_time(Player *player, RationalValue time){
+	player->seek(to_rational(time));
+}

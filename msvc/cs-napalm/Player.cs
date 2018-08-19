@@ -9,25 +9,28 @@ namespace cs_napalm
 {
     class Player : IDisposable
     {
-        private struct Rational
+        private struct RationalStruct
         {
             public long numerator, denominator;
         }
         
         public delegate void OnTrackChanged();
+        public delegate void OnSeekComplete();
 
         private delegate void OnTrackChangedPrivate(IntPtr data);
+        private delegate void OnSeekCompletePrivate(IntPtr data);
 
         private struct Callbacks
         {
             public IntPtr cb_data;
             public OnTrackChangedPrivate on_track_changed;
+            public OnSeekCompletePrivate on_seek_complete;
         }
         
         private struct NumericTrackInfo
         {
             public int track_number_int;
-            public Rational duration;
+            public RationalStruct duration;
             public double track_gain;
             public double track_peak;
             public double album_gain;
@@ -71,7 +74,7 @@ namespace cs_napalm
         private static extern void next(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern Rational get_current_time(IntPtr player);
+        private static extern RationalStruct get_current_time(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern void set_callbacks(IntPtr player, ref Callbacks callbacks);
@@ -84,6 +87,9 @@ namespace cs_napalm
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern void release_basic_track_info(IntPtr info);
+
+        [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void seek_to_time(IntPtr player, RationalStruct time);
 
         private IntPtr _player;
 
@@ -101,8 +107,14 @@ namespace cs_napalm
                 destroy_player(_player);
                 _player = IntPtr.Zero;
             }
-            ReleaseGcHandle(_onTrackChangedHandle);
-            _onTrackChangedHandle = IntPtr.Zero;
+            ReleaseHandle(ref _onTrackChangedHandle);
+            ReleaseHandle(ref _onSeekCompleteHandle);
+        }
+
+        public void ReleaseHandle(ref IntPtr handle)
+        {
+            ReleaseGcHandle(handle);
+            handle = IntPtr.Zero;
         }
 
         public bool LoadFile(string path)
@@ -138,28 +150,42 @@ namespace cs_napalm
             next(_player);
         }
 
-        public double GetCurrentTime()
+        private static Rational ToRational(RationalStruct r)
+        {
+            return new Rational(r.numerator, r.denominator);
+        }
+
+        public Rational GetCurrentTime()
         {
             var time = get_current_time(_player);
-            return (double)time.numerator / (double)time.denominator;
+            return ToRational(time);
         }
 
         private OnTrackChangedPrivate _onTrackChanged;
+        private OnSeekCompletePrivate _onSeekComplete;
         private IntPtr _onTrackChangedHandle;
+        private IntPtr _onSeekCompleteHandle;
 
-        public void SetCallbacks(OnTrackChanged otc)
+        public void SetCallbacks(OnTrackChanged otc, OnSeekComplete osc)
         {
             Callbacks callbacks;
             callbacks.cb_data = IntPtr.Zero;
 
             var oldOnTrackChangedHandle = _onTrackChangedHandle;
+            var oldOnSeekCompleteHandle = _onSeekCompleteHandle;
+
             _onTrackChanged = data => otc();
             _onTrackChangedHandle = GCHandle.ToIntPtr(GCHandle.Alloc(_onTrackChanged));
             callbacks.on_track_changed = _onTrackChanged;
 
+            _onSeekComplete = data => osc();
+            _onSeekCompleteHandle = GCHandle.ToIntPtr(GCHandle.Alloc(_onSeekComplete));
+            callbacks.on_seek_complete = _onSeekComplete;
+
             set_callbacks(_player, ref callbacks);
 
             ReleaseGcHandle(oldOnTrackChangedHandle);
+            ReleaseGcHandle(oldOnSeekCompleteHandle);
         }
 
         private static void ReleaseGcHandle(IntPtr p)
@@ -203,7 +229,7 @@ namespace cs_napalm
                     TrackId = Utf8ToString(info.track_id),
                     Path = Utf8ToString(info.path),
                     TrackNumberInt = info.numeric_track_info.track_number_int,
-                    Duration = (double)info.numeric_track_info.duration.numerator / (double)info.numeric_track_info.duration.denominator,
+                    Duration = ToRational(info.numeric_track_info.duration),
                     TrackGain = info.numeric_track_info.track_gain,
                     TrackPeak = info.numeric_track_info.track_peak,
                     AlbumGain = info.numeric_track_info.album_gain,
@@ -214,6 +240,16 @@ namespace cs_napalm
             {
                 release_basic_track_info(ptr);
             }
+        }
+
+        public void Seek(Rational time)
+        {
+            var rs = new RationalStruct
+            {
+                numerator = time.Numerator,
+                denominator = time.Denominator,
+            };
+            seek_to_time(_player, rs);
         }
     }
 }

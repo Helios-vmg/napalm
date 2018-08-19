@@ -14,11 +14,16 @@ class InputStream;
 class DecoderSubstream;
 class GenericMetadata;
 
+namespace BufferExtraData_flags{
+static const std::uint64_t seek_complete = (std::uint64_t)1 << 0;
+}
+
 struct BufferExtraData{
 	RationalValue timestamp;
 	AudioBuffer *next;
 	size_t sample_offset;
 	std::uint64_t stream_id;
+	std::uint64_t flags;
 };
 
 class MetadataModule;

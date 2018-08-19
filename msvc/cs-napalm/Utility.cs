@@ -70,5 +70,10 @@ namespace cs_napalm
             return time < 0 ? "N/A" : FormatTime(time, ms);
         }
 
+        public static string AbsoluteFormatTime(Rational time, bool ms = false)
+        {
+            return AbsoluteFormatTime(time.ToDouble(), ms);
+        }
+
     }
 }

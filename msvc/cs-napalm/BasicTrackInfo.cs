@@ -10,7 +10,7 @@
         public string TrackId;
         public string Path;
         public int TrackNumberInt;
-        public double Duration;
+        public Rational Duration;
         public double TrackGain;
         public double TrackPeak;
         public double AlbumGain;

@@ -43,7 +43,7 @@ std::uint64_t AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat for
 	return this->next_buffer_index;
 }
 
-size_t AudioQueue::pop_buffer(rational_t &time, bool &track_changed, void *void_dst, size_t size, size_t samples_queued){
+size_t AudioQueue::pop_buffer(rational_t &time, AudioQueueFlags &flags, void *void_dst, size_t size, size_t samples_queued){
 	size_t ret = 0;
 	bool signal = false;
 	bool time_set = false;
@@ -62,8 +62,10 @@ size_t AudioQueue::pop_buffer(rational_t &time, bool &track_changed, void *void_
 			}
 			if (extra.stream_id != this->current_stream_id){
 				this->current_stream_id = extra.stream_id;
-				track_changed = true;
+				flags |= AudioQueueFlags_values::track_changed;
 			}
+			if (extra.flags&BufferExtraData_flags::seek_complete)
+				flags |= AudioQueueFlags_values::seek_complete;
 			auto copy_size = std::min(size, this->head->sample_count - extra.sample_offset);
 			memcpy(dst, this->head->data + extra.sample_offset * sample_size, copy_size * sample_size);
 			extra.sample_offset += copy_size;

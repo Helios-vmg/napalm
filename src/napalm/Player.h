@@ -22,12 +22,14 @@ enum class Status{
 struct Callbacks{
 	void *cb_data = nullptr;
 	void (*on_track_changed)(void *cb_data) = nullptr;
+	void (*on_seek_complete)(void *cb_data) = nullptr;
 };
 
 class Player{
 	enum class Notification : std::uint8_t{
 		Destructing,
 		TrackChanged,
+		SeekComplete,
 	};
 
 	std::vector<std::unique_ptr<DecoderModule>> decoders;
@@ -46,6 +48,7 @@ class Player{
 	Callbacks callbacks;
 	std::thread async_notifications_thread;
 	ThreadSafeCircularQueue<Notification> notification_queue;
+	bool executing_seek = false;
 	
 	void load_plugins();
 	void open_output();

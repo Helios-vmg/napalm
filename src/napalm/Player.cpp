@@ -74,10 +74,11 @@ void Player::play(){
 void Player::seek(const rational_t &time){
 	LOCK_MUTEX2(this->mutex, "Player::seek()");
 	auto &substream = this->now_playing->get_first_source();
-	substream.seek_to_sample(0, false);
+	substream.seek_to_second(time, false);
 	this->now_playing->flush();
 	this->queue.flush_queue();
 	this->output_device->flush();
+	this->executing_seek = true;
 }
 
 void Player::pause(){
@@ -213,6 +214,13 @@ void Player::decoding_function(){
 					this->playlist.next_track();
 					continue;
 				}
+
+				auto &extra_data = get_extra_data<BufferExtraData>(buffer);
+				extra_data.flags = 0;
+				if (this->executing_seek){
+					this->executing_seek = false;
+					extra_data.flags |= BufferExtraData_flags::seek_complete;
+				}
 			}
 			//output.write((const char *)buffer->data, buffer->sample_count * dst_format.channels * sizeof_NumberFormat(dst_format.format));
 			buffer_index = this->queue.push_to_queue(std::move(buffer), dst_format, buffer_index);
@@ -221,6 +229,13 @@ void Player::decoding_function(){
 	}
 	this->now_playing.reset();
 }
+
+#define CALL_BACK(x) \
+	{ \
+		LOCK_MUTEX(this->callbacks_mutex, "Player::async_notifications_function()"); \
+		if (this->callbacks.x) \
+			this->callbacks.x(this->callbacks.cb_data); \
+	}
 
 void Player::async_notifications_function(){
 	bool stop = false;
@@ -231,11 +246,10 @@ void Player::async_notifications_function(){
 				stop = true;
 				break;
 			case Notification::TrackChanged:
-				{
-					LOCK_MUTEX(this->callbacks_mutex, "Player::async_notifications_function()");
-					if (this->callbacks.on_track_changed)
-						this->callbacks.on_track_changed(this->callbacks.cb_data);
-				}
+				CALL_BACK(on_track_changed);
+				break;
+			case Notification::SeekComplete:
+				CALL_BACK(on_seek_complete);
 				break;
 			default:
 				break;
@@ -281,10 +295,13 @@ void Player::open_output(){
 						LOCK_MUTEX2(this->mutex, "Player::open_output()");
 						if (this->status == Status::Paused)
 							return 0;
-						bool track_changed = false;
-						auto ret = this->queue.pop_buffer(this->current_time, track_changed, dst, size, samples_queued);
-						if (track_changed)
+						AudioQueueFlags flags = 0;
+						auto ret = this->queue.pop_buffer(this->current_time, flags, dst, size, samples_queued);
+						if (flags&AudioQueueFlags_values::track_changed)
 							this->notification_queue.push(Notification::TrackChanged);
+						if (flags&AudioQueueFlags_values::seek_complete)
+							this->notification_queue.push(Notification::SeekComplete);
+
 						return ret;
 					},
 					[this](const AudioFormat &af){
