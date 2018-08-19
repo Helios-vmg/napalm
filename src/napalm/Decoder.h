@@ -97,6 +97,9 @@ public:
 		return this->stream_id;
 	}
 	std::unique_ptr<GenericMetadata> get_metadata();
+	DecoderSubstream &get_first_source() override{
+		return *this;
+	}
 };
 
 void release_buffer(AudioBuffer *rr);

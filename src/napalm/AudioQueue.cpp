@@ -19,12 +19,12 @@ void AudioQueue::set_expected_format(const AudioFormat &format){
 	this->expected_format = format;
 }
 
-void AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format){
+std::uint64_t AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std::uint64_t buffer_index){
 	while (true){
 		{
-			LOCK_MUTEX(this->mutex);
-			if (format != this->expected_format)
-				return;
+			LOCK_MUTEX(this->mutex, "AudioQueue::push_to_queue()");
+			if (format != this->expected_format || this->next_buffer_index != buffer_index)
+				break;
 			if (this->size < this->limit){
 				this->size += rational_t(buffer->sample_count, this->format->freq);
 				if (this->tail){
@@ -33,12 +33,14 @@ void AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format){
 				}else
 					this->tail = this->head = buffer.release();
 				get_extra_data<BufferExtraData>(this->tail).sample_offset = 0;
+				this->next_buffer_index++;
 				break;
 			}
 		}
 		this->event.wait();
 	}
 	clear_queue(this->exit_queue);
+	return this->next_buffer_index;
 }
 
 size_t AudioQueue::pop_buffer(rational_t &time, bool &track_changed, void *void_dst, size_t size, size_t samples_queued){
@@ -46,7 +48,7 @@ size_t AudioQueue::pop_buffer(rational_t &time, bool &track_changed, void *void_
 	bool signal = false;
 	bool time_set = false;
 	{
-		LOCK_MUTEX(this->mutex);
+		LOCK_MUTEX(this->mutex, "AudioQueue::pop_buffer()");
 		auto dst = (std::uint8_t *)void_dst;
 		auto sample_size = sizeof_NumberFormat(this->format->format) * this->format->channels;
 		while (size){
@@ -88,7 +90,7 @@ size_t AudioQueue::pop_buffer(rational_t &time, bool &track_changed, void *void_
 }
 
 BufferExtraData AudioQueue::flush_queue(){
-	LOCK_MUTEX(this->mutex);
+	LOCK_MUTEX(this->mutex, "AudioQueue::flush_queue()");
 	BufferExtraData ret;
 	bool set = false;
 	memset(&ret, 0, sizeof(ret));
@@ -105,5 +107,6 @@ BufferExtraData AudioQueue::flush_queue(){
 	this->tail = nullptr;
 	this->size = rational_t(0, 1);
 	this->event.signal();
+	this->next_buffer_index = 0;
 	return ret;
 }

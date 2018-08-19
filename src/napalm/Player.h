@@ -37,7 +37,7 @@ class Player{
 	std::shared_ptr<OutputDevice> output_device;
 	AudioFormat final_format;
 	AudioQueue queue;
-	std::recursive_mutex mutex;
+	mutex_wrapper<std::recursive_mutex> mutex;
 	Status status = Status::Stopped;
 	Playlist playlist;
 	std::thread decoding_thread;
@@ -66,4 +66,5 @@ public:
 	void set_callbacks(const Callbacks &);
 	void get_playlist_state(size_t &size, size_t &position);
 	BasicTrackInfo get_basic_track_info(size_t playlist_position);
+	void seek(const rational_t &);
 };

@@ -53,7 +53,7 @@ std::shared_ptr<Decoder> Player::internal_load(const std::string &path){
 }
 
 void Player::play(){
-	LOCK_MUTEX(this->mutex);
+	LOCK_MUTEX2(this->mutex, "Player::play()");
 	switch (this->status){
 		case Status::Stopped:
 			if (this->decoding_thread.joinable())
@@ -62,7 +62,7 @@ void Player::play(){
 			this->status = Status::Playing;
 			break;
 		case Status::Playing:
-			//TODO
+			this->seek(rational_t(0, 1));
 			break;
 		case Status::Paused:
 			this->status = Status::Playing;
@@ -71,8 +71,17 @@ void Player::play(){
 	}
 }
 
+void Player::seek(const rational_t &time){
+	LOCK_MUTEX2(this->mutex, "Player::seek()");
+	auto &substream = this->now_playing->get_first_source();
+	substream.seek_to_sample(0, false);
+	this->now_playing->flush();
+	this->queue.flush_queue();
+	this->output_device->flush();
+}
+
 void Player::pause(){
-	LOCK_MUTEX(this->mutex);
+	LOCK_MUTEX2(this->mutex, "Player::pause()");
 	switch (this->status){
 		case Status::Stopped:
 			break;
@@ -89,7 +98,7 @@ void Player::pause(){
 
 void Player::stop(){
 	{
-		LOCK_MUTEX(this->mutex);
+		LOCK_MUTEX2(this->mutex, "Player::stop()");
 		switch (this->status){
 			case Status::Stopped:
 				return;
@@ -98,46 +107,43 @@ void Player::stop(){
 				this->status = Status::Stopped;
 				break;
 		}
+		this->now_playing->flush();
+		this->queue.flush_queue();
+		this->output_device->flush();
 	}
-	this->queue.flush_queue();
-	this->output_device->flush();
 	if (this->decoding_thread.joinable())
 		this->decoding_thread.join();
 	this->decoding_thread = std::thread();
 }
 
 void Player::next(){
-	{
-		LOCK_MUTEX(this->mutex);
-		this->playlist.next_track();
-		this->now_playing.reset();
-	}
+	LOCK_MUTEX2(this->mutex, "Player::next()");
+	this->playlist.next_track();
+	this->now_playing.reset();
 	this->queue.flush_queue();
 	this->output_device->flush();
 }
 
 void Player::previous(){
-	{
-		LOCK_MUTEX(this->mutex);
-		this->playlist.previous_track();
-		this->now_playing.reset();
-	}
+	LOCK_MUTEX2(this->mutex, "Player::previous()");
+	this->playlist.previous_track();
+	this->now_playing.reset();
 	this->queue.flush_queue();
 	this->output_device->flush();
 }
 
 rational_t Player::get_current_position(){
-	LOCK_MUTEX(this->mutex);
+	LOCK_MUTEX2(this->mutex, "Player::get_current_position()");
 	return this->current_time;
 }
 
 void Player::set_callbacks(const Callbacks &callbacks){
-	LOCK_MUTEX(this->callbacks_mutex);
+	LOCK_MUTEX(this->callbacks_mutex, "Player::set_callbacks()");
 	this->callbacks = callbacks;
 }
 
 void Player::get_playlist_state(size_t &size, size_t &position){
-	LOCK_MUTEX(this->mutex);
+	LOCK_MUTEX2(this->mutex, "Player::get_playlist_state()");
 	size = this->playlist.size();
 	position = this->playlist.get_current_index();
 }
@@ -172,6 +178,7 @@ BasicTrackInfo Player::get_basic_track_info(size_t playlist_position){
 void Player::decoding_function(){
 	std::shared_ptr<Decoder> decoder;
 	//std::ofstream output("output.raw", std::ios::binary);
+	auto buffer_index = this->queue.get_next_buffer_index();
 	try{
 		AudioFormat src_format = {Invalid, 0, 0};
 		AudioFormat dst_format = {Invalid, 0, 0};
@@ -179,7 +186,7 @@ void Player::decoding_function(){
 		while (true){
 			audio_buffer_t buffer(nullptr, release_buffer);
 			{
-				LOCK_MUTEX(this->mutex);
+				LOCK_MUTEX2(this->mutex, "Player::decoding_function()");
 				if (this->status == Status::Stopped)
 					break;
 				if (!this->now_playing){
@@ -208,7 +215,7 @@ void Player::decoding_function(){
 				}
 			}
 			//output.write((const char *)buffer->data, buffer->sample_count * dst_format.channels * sizeof_NumberFormat(dst_format.format));
-			this->queue.push_to_queue(std::move(buffer), dst_format);
+			buffer_index = this->queue.push_to_queue(std::move(buffer), dst_format, buffer_index);
 		}
 	}catch (...){
 	}
@@ -225,7 +232,7 @@ void Player::async_notifications_function(){
 				break;
 			case Notification::TrackChanged:
 				{
-					LOCK_MUTEX(this->callbacks_mutex);
+					LOCK_MUTEX(this->callbacks_mutex, "Player::async_notifications_function()");
 					if (this->callbacks.on_track_changed)
 						this->callbacks.on_track_changed(this->callbacks.cb_data);
 				}
@@ -271,7 +278,7 @@ void Player::open_output(){
 				kv.second->open(
 					0,
 					[this](void *dst, size_t size, size_t samples_queued) -> size_t{
-						LOCK_MUTEX(this->mutex);
+						LOCK_MUTEX2(this->mutex, "Player::open_output()");
 						if (this->status == Status::Paused)
 							return 0;
 						bool track_changed = false;
@@ -288,7 +295,7 @@ void Player::open_output(){
 				this->final_format = formats.front();
 				this->queue.set_expected_format(this->final_format);
 				return;
-			}catch (std::exception &e){}
+			}catch (std::exception &){}
 		}
 	}
 }
@@ -302,7 +309,7 @@ void Player::audio_format_changed(const AudioFormat &af){
 
 	this->queue.set_expected_format(af);
 
-	LOCK_MUTEX(this->mutex);
+	LOCK_MUTEX2(this->mutex, "Player::audio_format_changed()");
 	auto temp = this->now_playing->unroll_chain();
 	if (temp)
 		this->now_playing = std::move(temp);

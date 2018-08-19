@@ -17,6 +17,7 @@ namespace cs_napalm
     {
         private Player _player;
         private Timer _timer = new Timer();
+        const bool HighPrecisionTime = false;
 
         public MainWindow()
         {
@@ -24,7 +25,7 @@ namespace cs_napalm
 
             ArtCoverLabel.Image = new Bitmap(Resources.napalm_icon, new Size(ArtCoverLabel.Width, ArtCoverLabel.Height));
             
-            _timer.Interval = 250;
+            _timer.Interval = HighPrecisionTime ? 10 : 250;
             _timer.Tick += UpdateTime;
             _timer.Enabled = true;
         }
@@ -83,7 +84,7 @@ namespace cs_napalm
             _player.NextTrack();
         }
 
-        private void UpdateTime(object sender, EventArgs e)
+        private void UpdateTime(object sender = null, EventArgs e = null)
         {
             if (_player == null)
             {
@@ -92,8 +93,8 @@ namespace cs_napalm
                 return;
             }
             var time = _player.GetCurrentTime();
-            TimeLabel.Text = Utility.AbsoluteFormatTime(time);
-            DurationLabel.Text = Utility.AbsoluteFormatTime(-1);
+            TimeLabel.Text = Utility.AbsoluteFormatTime(time, HighPrecisionTime);
+            DurationLabel.Text = Utility.AbsoluteFormatTime(-1, HighPrecisionTime);
 
             var position = (int) Math.Floor(time*100);
             var duration = (int) Math.Floor(-100.0);
@@ -111,6 +112,7 @@ namespace cs_napalm
                 return;
 
             SetBasicMetadata(info);
+            UpdateTime();
         }
 
         private delegate void SetBasicMetadataDelegate(BasicTrackInfo info);

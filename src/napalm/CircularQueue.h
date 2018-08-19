@@ -55,7 +55,7 @@ public:
 	ThreadSafeCircularQueue(size_t capacity): queue(capacity){}
 	void push(T &&x){
 		{
-			LOCK_MUTEX(this->mutex);
+			LOCK_MUTEX(this->mutex, "ThreadSafeCircularQueue::push()");
 			this->queue.push(std::move(x));
 		}
 		this->event.signal();
@@ -63,7 +63,7 @@ public:
 	T pop(){
 		while (true){
 			{
-				LOCK_MUTEX(this->mutex);
+				LOCK_MUTEX(this->mutex, "ThreadSafeCircularQueue::pop()");
 				if (this->queue.size())
 					return this->queue.pop();
 			}

@@ -8,22 +8,28 @@ ResamplingFilter::ResamplingFilter(std::unique_ptr<BufferSource> &&source, const
 		resampler(nullptr, src_delete),
 		passed(nullptr, release_buffer){
 
+	this->preset = preset;
 	if (af.format != Float32)
 		throw std::runtime_error("ResamplingFilter only resamples float samples.");
 	this->frequency = frequency;
 	this->ratio = (double)this->frequency / af.freq;
 	this->rational_ratio = {this->frequency, af.freq};
+	this->bytes_per_sample = sizeof(float) * af.channels;
+	this->reset();
+}
+
+void ResamplingFilter::reset(){
 	int error;
-	resampler.reset(src_callback_new(samplerate_callback, (int)preset, af.channels, &error, this));
+	this->resampler.reset(src_callback_new(samplerate_callback, (int)this->preset, this->source_filter.channels, &error, this));
 	if (error)
 		throw std::runtime_error((std::string)"libsamplerate error: " + src_strerror(error));
-	this->bytes_per_sample = sizeof(float) * af.channels;
+	this->extra_info.reset();
 }
 
 audio_buffer_t ResamplingFilter::read(){
 	const long max_samples = 1024;
 	auto ret = allocate_buffer(max_samples * this->bytes_per_sample, sizeof(BufferExtraData));
-	auto samples = src_callback_read(resampler.get(), this->ratio, max_samples, (float *)ret->data);
+	auto samples = src_callback_read(this->resampler.get(), this->ratio, max_samples, (float *)ret->data);
 	if (samples < 0){
 		auto error = (int)samples;
 		throw std::runtime_error((std::string)"libsamplerate error: " + src_strerror(error));
@@ -42,6 +48,13 @@ audio_buffer_t ResamplingFilter::read(){
 	}
 
 	return ret;
+}
+
+void ResamplingFilter::flush(){
+	this->source->flush();
+	src_reset(this->resampler.get());
+	this->extra_info.reset();
+	//this->reset();
 }
 
 long ResamplingFilter::callback(float *&data){

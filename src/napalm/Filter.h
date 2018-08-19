@@ -26,6 +26,12 @@ public:
 			return std::move(this->source);
 		return temp;
 	}
+	DecoderSubstream &get_first_source() override{
+		return this->source->get_first_source();
+	}
+	virtual void flush() override{
+		this->source->flush();
+	}
 };
 
 template <typename T>
@@ -98,6 +104,7 @@ enum class ResamplerPreset{
 };
 
 class ResamplingFilter : public FilterSource{
+	ResamplerPreset preset;
 	AudioFormat source_filter;
 	int frequency;
 	double ratio;
@@ -115,9 +122,11 @@ class ResamplingFilter : public FilterSource{
 		return ((ResamplingFilter *)cb_data)->callback(*data);
 	}
 	long callback(float *&data);
+	void reset();
 public:
 	ResamplingFilter(std::unique_ptr<BufferSource> &&, const AudioFormat &af, int frequency, ResamplerPreset preset = ResamplerPreset::SincBestQuality);
 	audio_buffer_t read() override;
+	void flush() override;
 };
 
 std::unique_ptr<BufferSource> build_filter_chain(
