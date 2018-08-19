@@ -111,8 +111,13 @@ namespace cs_napalm
 
             var position = (time*100).ToIntTruncate();
             var duration = (_currentDuration*100).ToIntTruncate();
-            if (overrideValue < 0 && position >= 0 && position <= duration && !DraggingSeekbar)
-                SeekBar.Value = position;
+            if (overrideValue < 0 && !DraggingSeekbar)
+            {
+                if (position < 0)
+                    SeekBar.Value = 0;
+                else if (position <= duration)
+                    SeekBar.Value = position;
+            }
         }
 
         private void SetDuration(Rational durationQ)
