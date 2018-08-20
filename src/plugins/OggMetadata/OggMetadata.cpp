@@ -197,10 +197,6 @@ void OggMetadata::add_vorbis_comment(const void *buffer, size_t length){
 	this->add(field_name, field_value);
 }
 
-std::unique_ptr<OggMetadataIterator> OggMetadata::get_iterator(){
-	return std::make_unique<OggMetadataIterator>(*this->decoder, this->map.begin(), this->map.end());
-}
-
 bool OggMetadataIterator::next(std::string &key, std::string &value){
 	if (this->current == this->end)
 		return false;

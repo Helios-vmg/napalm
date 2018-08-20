@@ -1,6 +1,6 @@
 #include <decoder_module.h>
 #include <metadata_module.h>
-#include "OggDecoder.h"
+#include "FlacDecoder.h"
 
 #if defined WIN32 || defined _WIN32 || defined _WIN64
 #define EXPORT extern "C" __declspec(dllexport)
@@ -30,7 +30,7 @@ static const char **get_module_types(ModulePtr){
 }
 
 static const char *get_module_name(ModulePtr){
-	return "OggDecoder";
+	return "FlacDecoder";
 }
 
 static const char *get_module_version(ModulePtr){
@@ -44,7 +44,8 @@ static const char *get_error_message(ModulePtr instance){
 
 const char **decoder_get_supported_extensions(ModulePtr){
 	static const char *ret[] = {
-		"ogg",
+		"flac",
+		"oga",
 		nullptr,
 	};
 	return ret;
@@ -54,7 +55,7 @@ static DecoderPtr decoder_open(ModulePtr instance, const char *path, const Exter
 	auto &module = *(Module *)instance;
 	try{
 		module.clear_error();
-		return new OggDecoder(path, *io, &module);
+		return new FlacDecoder(path, *io, &module);
 	}catch (std::exception &e){
 		module.set_error(e.what());
 	}catch (...){}
@@ -62,11 +63,11 @@ static DecoderPtr decoder_open(ModulePtr instance, const char *path, const Exter
 }
 
 static void decoder_close(DecoderPtr instance){
-	delete (OggDecoder *)instance;
+	delete (FlacDecoder *)instance;
 }
 
 static int decoder_get_substreams_count(DecoderPtr instance){
-	auto &decoder = *(OggDecoder *)instance;
+	auto &decoder = *(FlacDecoder *)instance;
 	auto &module = decoder.get_module();
 	try{
 		return decoder.get_substream_count();
@@ -77,7 +78,7 @@ static int decoder_get_substreams_count(DecoderPtr instance){
 }
 
 static DecoderSubstreamPtr decoder_get_substream(DecoderPtr instance, int substream_index){
-	auto &decoder = *(OggDecoder *)instance;
+	auto &decoder = *(FlacDecoder *)instance;
 	auto &module = decoder.get_module();
 	try{
 		return decoder.get_substream(substream_index);
@@ -88,11 +89,11 @@ static DecoderSubstreamPtr decoder_get_substream(DecoderPtr instance, int substr
 }
 
 static void substream_close(DecoderSubstreamPtr instance){
-	delete (OggDecoderSubstream *)instance;
+	delete (FlacDecoderSubstream *)instance;
 }
 
 AudioFormat substream_get_audio_format(DecoderSubstreamPtr instance){
-	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &substream = *(FlacDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
 		return substream.get_audio_format();
@@ -106,16 +107,8 @@ AudioFormat substream_get_audio_format(DecoderSubstreamPtr instance){
 	return ret;
 }
 
-void substream_set_number_format_hint(DecoderSubstreamPtr instance, NumberFormat nf){
-	auto &substream = *(OggDecoderSubstream *)instance;
-	try{
-		substream.set_number_format_hint(nf);
-	}catch (std::exception &){
-	}
-}
-
 static AudioBuffer *substream_read(DecoderSubstreamPtr instance, size_t extra_data){
-	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &substream = *(FlacDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
 		return substream.read(extra_data);
@@ -126,7 +119,7 @@ static AudioBuffer *substream_read(DecoderSubstreamPtr instance, size_t extra_da
 }
 
 static RationalValue substream_get_length_in_seconds(DecoderSubstreamPtr instance){
-	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &substream = *(FlacDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
 		return substream.get_length_in_seconds();
@@ -137,7 +130,7 @@ static RationalValue substream_get_length_in_seconds(DecoderSubstreamPtr instanc
 }
 
 static std::uint64_t substream_get_length_in_samples(DecoderSubstreamPtr instance){
-	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &substream = *(FlacDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
 		return substream.get_length_in_samples();
@@ -148,7 +141,7 @@ static std::uint64_t substream_get_length_in_samples(DecoderSubstreamPtr instanc
 }
 
 static std::int64_t substream_seek_to_sample(DecoderSubstreamPtr instance, int64_t sample, int fast){
-	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &substream = *(FlacDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
 		return substream.seek_to_sample(sample, !!fast);
@@ -159,7 +152,7 @@ static std::int64_t substream_seek_to_sample(DecoderSubstreamPtr instance, int64
 }
 
 static RationalValue substream_seek_to_second(DecoderSubstreamPtr instance, RationalValue seconds, int fast){
-	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &substream = *(FlacDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
 		return substream.seek_to_second(seconds, !!fast);
@@ -170,7 +163,7 @@ static RationalValue substream_seek_to_second(DecoderSubstreamPtr instance, Rati
 }
 
 MetadataPtr decoder_substream_get_metadata(DecoderSubstreamPtr instance){
-	auto &substream = *(OggDecoderSubstream *)instance;
+	auto &substream = *(FlacDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
 	try{
 		return substream.get_metadata();
@@ -199,7 +192,6 @@ EXPORT const ModuleExportEntry *GetFunctionTable(ModulePtr){
 		EXPORT_MODULE_FUNCTION(decoder_get_substream),
 		EXPORT_MODULE_FUNCTION(substream_close),
 		EXPORT_MODULE_FUNCTION(substream_get_audio_format),
-		EXPORT_MODULE_FUNCTION(substream_set_number_format_hint),
 		EXPORT_MODULE_FUNCTION(substream_read),
 		EXPORT_MODULE_FUNCTION(substream_get_length_in_seconds),
 		EXPORT_MODULE_FUNCTION(substream_get_length_in_samples),

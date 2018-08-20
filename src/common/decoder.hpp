@@ -58,9 +58,9 @@ boost::rational<T> to_rational(double x){
 class DecoderSubstream;
 
 class Decoder{
+	std::int64_t position = 0;
 protected:
 	WrappedExternalIO io;
-	std::int64_t position = 0;
 	struct StreamRange{
 		rational_t time_begin;
 		rational_t time_length;
@@ -68,6 +68,7 @@ protected:
 		int frequency;
 	};
 	std::vector<StreamRange> stream_ranges;
+	std::int64_t time_resolution = -1;
 
 	virtual AudioBuffer *internal_read(const AudioFormat &, size_t extra_data, int substream_index) = 0;
 	std::int64_t time_to_sample(const rational_t &time) const{
@@ -82,6 +83,9 @@ protected:
 		auto conv = (time - it->time_begin) * it->frequency;
 		return it->sample_begin + conv.numerator() / conv.denominator();
 	}
+	virtual std::int64_t seek_to_sample_internal(std::int64_t pos, bool fast){
+		return -1;
+	}
 public:
 	Decoder(const ExternalIO &io): io(io){}
 	virtual ~Decoder(){}
@@ -92,10 +96,14 @@ public:
 		this->position += ret->sample_count;
 		return ret;
 	}
-	virtual std::int64_t seek_to_sample(std::int64_t pos, bool fast){
+	std::int64_t seek_to_sample(std::int64_t pos, bool fast){
 		if (pos == this->position)
 			return pos;
-		return -1;
+		auto ret = this->seek_to_sample_internal(pos, fast);
+		if (ret < 0)
+			return -1;
+		this->position = ret;
+		return ret;
 	}
 	virtual rational_t seek_to_second(const rational_t &second, bool fast){
 		auto sample = this->time_to_sample(second);
@@ -104,7 +112,7 @@ public:
 		auto ret = this->seek_to_sample(sample, fast);
 		if (ret < 0)
 			return rational_t(-1, 1);
-		return second;
+		return rational_t(ret, this->time_resolution);
 	}
 	virtual std::int64_t sample_tell(){
 		return this->position;
@@ -140,7 +148,7 @@ public:
 		first_moment(first_moment),
 		length(length),
 		seconds_length(seconds_length){}
-	virtual ~DecoderSubstream(){}
+	virtual ~DecoderSubstream() = 0;
 	virtual RationalValue get_length_in_seconds(){
 		return to_RationalValue(this->seconds_length);
 	}
@@ -186,3 +194,5 @@ public:
 	}
 	virtual void set_number_format_hint(NumberFormat nf){}
 };
+
+inline DecoderSubstream::~DecoderSubstream(){}

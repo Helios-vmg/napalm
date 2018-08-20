@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{21014F01-8662-4383-981E-4F6232F93B0A}</ProjectGuid>
+    <ProjectGuid>{F0BDACCF-E4B2-49CB-AF65-0C528D90D203}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>OggDecoder</RootNamespace>
+    <RootNamespace>FlacDecoder</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -91,16 +91,15 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OGGDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FLAC__NO_DLL;WIN32;_DEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\libd</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libogg.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>libogg.lib;libflac.lib;libflac++.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -109,16 +108,15 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;OGGDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FLAC__NO_DLL;_DEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>$(SolutionDir)\lib64d</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libogg.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libogg.lib;libflac.lib;libflac++.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -129,10 +127,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OGGDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FLAC__NO_DLL;WIN32;NDEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,8 +137,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libogg.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>libogg.lib;libflac.lib;libflac++.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -152,36 +148,30 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;OGGDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FLAC__NO_DLL;NDEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>$(SolutionDir)\lib64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libogg.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libogg.lib;libflac.lib;libflac++.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\common\base64.cpp" />
-    <ClCompile Include="..\..\src\plugins\OggDecoder\main.cpp" />
-    <ClCompile Include="..\..\src\plugins\OggDecoder\Module.cpp" />
-    <ClCompile Include="..\..\src\plugins\OggDecoder\OggDecoder.cpp" />
+    <ClCompile Include="..\..\src\plugins\FlacDecoder\FlacDecoder.cpp" />
+    <ClCompile Include="..\..\src\plugins\FlacDecoder\main.cpp" />
+    <ClCompile Include="..\..\src\plugins\FlacDecoder\Module.cpp" />
     <ClCompile Include="..\..\src\plugins\OggMetadata\OggMetadata.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\common\base64.hpp" />
-    <ClInclude Include="..\..\src\common\decoder.hpp" />
-    <ClInclude Include="..\..\src\common\GenericMetadata.hpp" />
-    <ClInclude Include="..\..\src\common\metadata_module.h" />
-    <ClInclude Include="..\..\src\common\WrappedExternalIO.hpp" />
-    <ClInclude Include="..\..\src\plugins\OggDecoder\Module.h" />
-    <ClInclude Include="..\..\src\plugins\OggDecoder\OggDecoder.h" />
+    <ClInclude Include="..\..\src\plugins\FlacDecoder\FlacDecoder.h" />
+    <ClInclude Include="..\..\src\plugins\FlacDecoder\Module.h" />
     <ClInclude Include="..\..\src\plugins\OggMetadata\OggMetadata.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

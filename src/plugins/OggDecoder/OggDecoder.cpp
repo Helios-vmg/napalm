@@ -83,7 +83,6 @@ OggDecoderSubstream::OggDecoderSubstream(
 			const rational_t &first_moment,
 			const rational_t &seconds_length):
 		DecoderSubstream(parent, index, first_sample, length, first_moment, seconds_length),
-		metadata(parent),
 		ogg_parent(parent){
 
 	auto ogg_file = this->ogg_parent.get_ogg_file();
@@ -215,19 +214,11 @@ AudioBuffer *OggDecoder::internal_read(const AudioFormat &af, size_t extra_data,
 	return &ret.release()->read_result;
 }
 
-std::int64_t OggDecoder::seek_to_sample(std::int64_t pos, bool fast){
-	if (this->position == pos)
-		return pos;
-
-	std::int64_t ret;
+std::int64_t OggDecoder::seek_to_sample_internal(std::int64_t pos, bool fast){
 	if (!fast)
-		ret = !ov_pcm_seek(&this->ogg_file, pos) ? pos : -1;
-	else
-		ret = !ov_pcm_seek_page(&this->ogg_file, pos) ? ov_pcm_tell(&this->ogg_file) : -1;
+		return !ov_pcm_seek(&this->ogg_file, pos) ? pos : -1;
 	
-	if (ret >= 0)
-		this->position = ret;
-	return ret;
+	return !ov_pcm_seek_page(&this->ogg_file, pos) ? ov_pcm_tell(&this->ogg_file) : -1;
 }
 
 DecoderSubstream *OggDecoder::get_substream(int index){

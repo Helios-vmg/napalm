@@ -5,10 +5,8 @@
 #include <memory>
 
 class OggMetadataIterator;
-class OggDecoder;
 
 class OggMetadata{
-	OggDecoder *decoder;
 	std::map<std::string, std::string> map;
 	std::vector<unsigned char> ogg_picture;
 	static std::string ALBUM,
@@ -24,12 +22,9 @@ class OggMetadata{
 	}
 	static std::string empty_string;
 public:
-	OggMetadata(OggDecoder &decoder): decoder(&decoder){}
+	OggMetadata() = default;
 	OggMetadata(const OggMetadata &) = default;
 	OggMetadata(OggMetadata &&other) = delete;
-	OggDecoder &get_decoder(){
-		return *this->decoder;
-	}
 	const OggMetadata &operator=(OggMetadata &&other) = delete;
 	void add_vorbis_comment(const void *, size_t);
 	template <typename F>
@@ -62,22 +57,23 @@ public:
 	double track_peak();
 	double album_gain();
 	double album_peak();
-	std::unique_ptr<OggMetadataIterator> get_iterator();
+	template <typename T>
+	std::unique_ptr<std::pair<OggMetadataIterator, T>> get_iterator(const T &);
 };
 
 class OggMetadataIterator{
 public:
 	typedef std::map<std::string, std::string>::iterator T;
 private:
-	OggDecoder *decoder;
 	T current, end;
 public:
-	OggMetadataIterator(OggDecoder &decoder, const T &begin, const T &end):
-		decoder(&decoder),
+	OggMetadataIterator(const T &begin, const T &end):
 		current(begin),
 		end(end){}
-	OggDecoder &get_decoder(){
-		return *this->decoder;
-	}
 	bool next(std::string &key, std::string &value);
 };
+
+	template <typename T>
+std::unique_ptr<std::pair<OggMetadataIterator, T>> OggMetadata::get_iterator(const T &x){
+	return std::make_unique<std::pair<OggMetadataIterator, T>>(OggMetadataIterator(this->map.begin(), this->map.end()), x);
+}

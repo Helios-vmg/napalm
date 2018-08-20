@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../common/decoder.hpp"
-#include "OggMetadata.h"
+#include "../OggMetadata/OggMetadata.h"
 #include "Module.h"
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
@@ -12,15 +12,14 @@ class OggDecoder : public Decoder{
 	OggVorbis_File ogg_file;
 	bool seekable;
 	int stream_count;
-	std::int64_t time_resolution;
 
 	AudioBuffer *internal_read(const AudioFormat &, size_t extra_data, int substream_index) override;
 	void init_time_resolution();
 	int ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, size_t &samples, int substream_index);
+	std::int64_t seek_to_sample_internal(std::int64_t pos, bool fast) override;
 public:
 	OggDecoder(const char *path, const ExternalIO &io, Module *module);
 	~OggDecoder();
-	std::int64_t seek_to_sample(std::int64_t pos, bool fast) override;
 	int get_substream_count() override{
 		return this->stream_count;
 	}
@@ -40,6 +39,14 @@ public:
 	static long tell(void *s);
 };
 
+struct OggMetadataWrapper{
+	OggDecoder *decoder;
+	OggMetadata metadata;
+	OggMetadataWrapper(OggDecoder &decoder, const OggMetadata &metadata):
+		decoder(&decoder),
+		metadata(metadata){}
+};
+
 class OggDecoderSubstream : public DecoderSubstream{
 	OggDecoder &ogg_parent;
 	OggMetadata metadata;
@@ -55,8 +62,8 @@ public:
 		return this->ogg_parent;
 	}
 	void set_number_format_hint(NumberFormat nf);
-	OggMetadata *get_metadata(){
-		return new OggMetadata(this->metadata);
+	OggMetadataWrapper *get_metadata(){
+		return new OggMetadataWrapper(this->ogg_parent, this->metadata);
 	}
 };
 

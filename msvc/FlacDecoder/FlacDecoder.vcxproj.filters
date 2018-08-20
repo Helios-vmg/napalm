@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\plugins\OggDecoder\main.cpp">
+    <ClCompile Include="..\..\src\plugins\FlacDecoder\FlacDecoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\plugins\OggDecoder\OggDecoder.cpp">
+    <ClCompile Include="..\..\src\plugins\FlacDecoder\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\plugins\OggDecoder\Module.cpp">
+    <ClCompile Include="..\..\src\plugins\FlacDecoder\Module.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\common\base64.cpp">
@@ -32,22 +32,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\common\decoder.hpp">
+    <ClInclude Include="..\..\src\plugins\FlacDecoder\FlacDecoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\plugins\OggDecoder\OggDecoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\common\WrappedExternalIO.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\common\GenericMetadata.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\plugins\OggDecoder\Module.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\common\metadata_module.h">
+    <ClInclude Include="..\..\src\plugins\FlacDecoder\Module.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\common\base64.hpp">
