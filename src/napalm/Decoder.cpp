@@ -37,7 +37,7 @@ DecoderModule::DecoderModule(const std::shared_ptr<Module> &module): module(modu
 	GET_REQUIRED_FUNCTION(decoder_get_substream);
 	GET_REQUIRED_FUNCTION(substream_close);
 	GET_REQUIRED_FUNCTION(substream_get_audio_format);
-	GET_REQUIRED_FUNCTION(substream_set_number_format_hint);
+	GET_OPTIONAL_FUNCTION(substream_set_number_format_hint);
 	GET_REQUIRED_FUNCTION(substream_read);
 	GET_OPTIONAL_FUNCTION(substream_get_length_in_seconds);
 	GET_OPTIONAL_FUNCTION(substream_get_length_in_samples);
