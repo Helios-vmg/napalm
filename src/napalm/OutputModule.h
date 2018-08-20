@@ -44,10 +44,13 @@ private:
 
 	OutputDevice(OutputModule &parent, size_t index, const OutputDeviceListItem &);
 	static size_t AudioCallback(void *cb_data, void *dst, size_t size, size_t samples_queued){
-		return ((OutputDevice *)cb_data)->audio_callback(dst, size, samples_queued);
+		auto This = (OutputDevice *)cb_data;
+		return !This->audio_callback ? 0 : This->audio_callback(dst, size, samples_queued);
 	}
 	static void AudioFormatChangedCallback(void *cb_data, const AudioFormat *af){
-		((OutputDevice *)cb_data)->notification_callback(*af);
+		auto This = (OutputDevice *)cb_data;
+		if (This->notification_callback)
+			This->notification_callback(*af);
 	}
 public:
 	OutputDevice(const OutputDevice &) = delete;
