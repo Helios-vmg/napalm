@@ -7,6 +7,7 @@
 #include <vorbis/vorbisfile.h>
 #include <FLAC++/decoder.h>
 #include <boost/optional.hpp>
+#include "AbstractFlacDecoder.h"
 
 struct FlacAudioBuffer{
 	FlacAudioBuffer *next;
@@ -16,7 +17,7 @@ struct FlacAudioBuffer{
 typedef std::unique_ptr<FlacAudioBuffer, void (*)(FlacAudioBuffer *)> UniqueFlacAudioBuffer;
 
 class FlacDecoder : public Decoder, public FLAC::Decoder::Stream{
-	Module *module;
+	SlicedIO io;
 	std::string path;
 	FlacAudioBuffer *queue_head = nullptr,
 		*queue_tail = nullptr;
@@ -24,7 +25,6 @@ class FlacDecoder : public Decoder, public FLAC::Decoder::Stream{
 	static allocator_func allocator_functions[];
 	boost::optional<AudioFormat> format;
 	bool seekable,
-		tellable,
 		at_eof = false;
 	int stream_count = 1;
 	static const std::int64_t length_unset = -1;
@@ -32,6 +32,7 @@ class FlacDecoder : public Decoder, public FLAC::Decoder::Stream{
 	std::int64_t length = length_unset;
 	size_t extra_data_size = 32;
 	OggMetadata metadata;
+	bool native_cuesheet = false;
 
 	FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame *frame, const FLAC__int32 * const *buffer) override;
 	FLAC__StreamDecoderReadStatus read_callback(FLAC__byte *buffer, size_t *bytes) override;
@@ -51,13 +52,17 @@ class FlacDecoder : public Decoder, public FLAC::Decoder::Stream{
 	rational_t get_seconds_length_internal();
 
 	void free_buffers();
-	void read_vorbis_comments(const FLAC__StreamMetadata_VorbisComment &comments);
 
 	void set_af();
 	AudioBuffer *internal_read(const AudioFormat &, size_t extra_data, int substream_index) override;
 	std::int64_t seek_to_sample_internal(std::int64_t pos, bool fast) override;
+	bool parse_cuesheet();
+	void read_vorbis_comments(const FLAC__StreamMetadata_VorbisComment &);
+	void read_stream_info(const FLAC__StreamMetadata_StreamInfo &);
+	void read_cuesheet(const FLAC__StreamMetadata_CueSheet &);
+	void read_picture(const FLAC__StreamMetadata_Picture &);
 public:
-	FlacDecoder(const char *path, const ExternalIO &io, Module *module);
+	FlacDecoder(const char *path, const SlicedIO &io, Module *module);
 	~FlacDecoder();
 	int get_substream_count() override{
 		return this->stream_count;
@@ -77,15 +82,7 @@ public:
 	}
 };
 
-struct OggMetadataWrapper{
-	FlacDecoder *decoder;
-	OggMetadata metadata;
-	OggMetadataWrapper(FlacDecoder &decoder, const OggMetadata &metadata):
-		decoder(&decoder),
-		metadata(metadata){}
-};
-
-class FlacDecoderSubstream : public DecoderSubstream{
+class FlacDecoderSubstream : public AbstractFlacDecoderSubstream{
 	FlacDecoder &flac_parent;
 	//OggMetadata metadata;
 public:
@@ -100,9 +97,11 @@ public:
 		return this->flac_parent;
 	}
 	void set_number_format_hint(NumberFormat nf){}
-	OggMetadataWrapper *get_metadata(){
+	OggMetadataWrapper *get_metadata() override{
 		return new OggMetadataWrapper(this->flac_parent, this->flac_parent.get_metadata());
 	}
 };
 
 void release(AudioBuffer *);
+
+bool is_native_flac(const std::string &path);

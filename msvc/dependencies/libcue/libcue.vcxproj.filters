@@ -15,48 +15,42 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\plugins\FlacDecoder\FlacDecoder.cpp">
+    <ClCompile Include="..\..\..\dependencies\sources\libcue-2.2.1\src\cd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\plugins\FlacDecoder\main.cpp">
+    <ClCompile Include="..\..\..\dependencies\sources\libcue-2.2.1\src\cdtext.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\plugins\FlacDecoder\Module.cpp">
+    <ClCompile Include="..\..\..\dependencies\sources\libcue-2.2.1\src\rem.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\common\base64.cpp">
+    <ClCompile Include="..\..\..\dependencies\sources\libcue-2.2.1\src\time.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\plugins\OggMetadata\OggMetadata.cpp">
+    <ClCompile Include="..\..\..\dependencies\sources\libcue-2.2.1\src\cue_parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\plugins\FlacDecoder\CircularBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\plugins\FlacDecoder\OggFlacDecoder.cpp">
+    <ClCompile Include="..\..\..\dependencies\sources\libcue-2.2.1\src\cue_scanner.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\plugins\FlacDecoder\FlacDecoder.h">
+    <ClInclude Include="..\..\..\dependencies\sources\libcue-2.2.1\src\cd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\plugins\FlacDecoder\Module.h">
+    <ClInclude Include="..\..\..\dependencies\sources\libcue-2.2.1\src\cdtext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\common\base64.hpp">
+    <ClInclude Include="..\..\..\dependencies\sources\libcue-2.2.1\src\rem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\plugins\OggMetadata\OggMetadata.h">
+    <ClInclude Include="..\..\..\dependencies\sources\libcue-2.2.1\src\time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\plugins\FlacDecoder\CircularBuffer.h">
+    <ClInclude Include="..\..\..\dependencies\sources\libcue-2.2.1\include\libcue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\plugins\FlacDecoder\OggFlacDecoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\plugins\FlacDecoder\AbstractFlacDecoder.h">
+    <ClInclude Include="..\..\..\dependencies\sources\libcue-2.2.1\src\cue_parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

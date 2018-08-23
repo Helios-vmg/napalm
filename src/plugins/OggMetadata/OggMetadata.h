@@ -9,6 +9,8 @@ class OggMetadataIterator;
 class OggMetadata{
 	std::map<std::string, std::string> map;
 	std::vector<unsigned char> ogg_picture;
+	static std::string empty_string;
+public:
 	static std::string ALBUM,
 		TITLE,
 		ARTIST,
@@ -16,12 +18,13 @@ class OggMetadata{
 		DATE,
 		OPUS,
 		PART,
-		METADATA_BLOCK_PICTURE;
-	void add(const std::string &key, std::string &value){
-		this->map[key] = value;
-	}
-	static std::string empty_string;
-public:
+		METADATA_BLOCK_PICTURE,
+		CUESHEET,
+		REPLAYGAIN_TRACK_GAIN,
+		REPLAYGAIN_TRACK_PEAK,
+		REPLAYGAIN_ALBUM_GAIN,
+		REPLAYGAIN_ALBUM_PEAK;
+
 	OggMetadata() = default;
 	OggMetadata(const OggMetadata &) = default;
 	OggMetadata(OggMetadata &&other) = delete;
@@ -50,6 +53,9 @@ public:
 	const std::string &date(){
 		return this->get_string_or_nothing(DATE);
 	}
+	const std::string &cuesheet(){
+		return this->get_string_or_nothing(CUESHEET);
+	}
 	const std::vector<std::uint8_t> &front_cover() const{
 		return this->ogg_picture;
 	}
@@ -59,6 +65,14 @@ public:
 	double album_peak();
 	template <typename T>
 	std::unique_ptr<std::pair<OggMetadataIterator, T>> get_iterator(const T &);
+	void add(const std::string &key, const std::string &value){
+		this->map[key] = value;
+	}
+	void set_front_cover(const void *data, size_t size){
+		this->ogg_picture.resize(size);
+		if (size)
+			memcpy(&this->ogg_picture[0], data, size);
+	}
 };
 
 class OggMetadataIterator{

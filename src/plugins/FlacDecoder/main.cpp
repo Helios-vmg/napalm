@@ -1,6 +1,7 @@
 #include <decoder_module.h>
 #include <metadata_module.h>
 #include "FlacDecoder.h"
+#include "OggFlacDecoder.h"
 
 #if defined WIN32 || defined _WIN32 || defined _WIN64
 #define EXPORT extern "C" __declspec(dllexport)
@@ -55,7 +56,9 @@ static DecoderPtr decoder_open(ModulePtr instance, const char *path, const Exter
 	auto &module = *(Module *)instance;
 	try{
 		module.clear_error();
-		return new FlacDecoder(path, *io, &module);
+		if (is_native_flac(path))
+			return (Decoder *)new FlacDecoder(path, *io, &module);
+		return (Decoder *)new OggFlacDecoder(path, *io, &module);
 	}catch (std::exception &e){
 		module.set_error(e.what());
 	}catch (...){}
@@ -63,12 +66,12 @@ static DecoderPtr decoder_open(ModulePtr instance, const char *path, const Exter
 }
 
 static void decoder_close(DecoderPtr instance){
-	delete (FlacDecoder *)instance;
+	delete (Decoder *)instance;
 }
 
 static int decoder_get_substreams_count(DecoderPtr instance){
-	auto &decoder = *(FlacDecoder *)instance;
-	auto &module = decoder.get_module();
+	auto &decoder = *(Decoder *)instance;
+	auto &module = *decoder.get_module();
 	try{
 		return decoder.get_substream_count();
 	}catch (std::exception &e){
@@ -78,10 +81,10 @@ static int decoder_get_substreams_count(DecoderPtr instance){
 }
 
 static DecoderSubstreamPtr decoder_get_substream(DecoderPtr instance, int substream_index){
-	auto &decoder = *(FlacDecoder *)instance;
-	auto &module = decoder.get_module();
+	auto &decoder = *(Decoder *)instance;
+	auto &module = *decoder.get_module();
 	try{
-		return decoder.get_substream(substream_index);
+		return (AbstractFlacDecoderSubstream *)decoder.get_substream(substream_index);
 	}catch (std::exception &e){
 		module.set_error(e.what());
 	}
@@ -89,12 +92,12 @@ static DecoderSubstreamPtr decoder_get_substream(DecoderPtr instance, int substr
 }
 
 static void substream_close(DecoderSubstreamPtr instance){
-	delete (FlacDecoderSubstream *)instance;
+	delete (AbstractFlacDecoderSubstream *)instance;
 }
 
 AudioFormat substream_get_audio_format(DecoderSubstreamPtr instance){
-	auto &substream = *(FlacDecoderSubstream *)instance;
-	auto &module = substream.get_parent().get_module();
+	auto &substream = *(AbstractFlacDecoderSubstream *)instance;
+	auto &module = *substream.get_parent().get_module();
 	try{
 		return substream.get_audio_format();
 	}catch (std::exception &e){
@@ -108,8 +111,8 @@ AudioFormat substream_get_audio_format(DecoderSubstreamPtr instance){
 }
 
 static AudioBuffer *substream_read(DecoderSubstreamPtr instance, size_t extra_data){
-	auto &substream = *(FlacDecoderSubstream *)instance;
-	auto &module = substream.get_parent().get_module();
+	auto &substream = *(AbstractFlacDecoderSubstream *)instance;
+	auto &module = *substream.get_parent().get_module();
 	try{
 		return substream.read(extra_data);
 	}catch (std::exception &e){
@@ -119,8 +122,8 @@ static AudioBuffer *substream_read(DecoderSubstreamPtr instance, size_t extra_da
 }
 
 static RationalValue substream_get_length_in_seconds(DecoderSubstreamPtr instance){
-	auto &substream = *(FlacDecoderSubstream *)instance;
-	auto &module = substream.get_parent().get_module();
+	auto &substream = *(AbstractFlacDecoderSubstream *)instance;
+	auto &module = *substream.get_parent().get_module();
 	try{
 		return substream.get_length_in_seconds();
 	}catch (std::exception &e){
@@ -130,8 +133,8 @@ static RationalValue substream_get_length_in_seconds(DecoderSubstreamPtr instanc
 }
 
 static std::uint64_t substream_get_length_in_samples(DecoderSubstreamPtr instance){
-	auto &substream = *(FlacDecoderSubstream *)instance;
-	auto &module = substream.get_parent().get_module();
+	auto &substream = *(AbstractFlacDecoderSubstream *)instance;
+	auto &module = *substream.get_parent().get_module();
 	try{
 		return substream.get_length_in_samples();
 	}catch (std::exception &e){
@@ -141,8 +144,8 @@ static std::uint64_t substream_get_length_in_samples(DecoderSubstreamPtr instanc
 }
 
 static std::int64_t substream_seek_to_sample(DecoderSubstreamPtr instance, int64_t sample, int fast){
-	auto &substream = *(FlacDecoderSubstream *)instance;
-	auto &module = substream.get_parent().get_module();
+	auto &substream = *(AbstractFlacDecoderSubstream *)instance;
+	auto &module = *substream.get_parent().get_module();
 	try{
 		return substream.seek_to_sample(sample, !!fast);
 	}catch (std::exception &e){
@@ -152,8 +155,8 @@ static std::int64_t substream_seek_to_sample(DecoderSubstreamPtr instance, int64
 }
 
 static RationalValue substream_seek_to_second(DecoderSubstreamPtr instance, RationalValue seconds, int fast){
-	auto &substream = *(FlacDecoderSubstream *)instance;
-	auto &module = substream.get_parent().get_module();
+	auto &substream = *(AbstractFlacDecoderSubstream *)instance;
+	auto &module = *substream.get_parent().get_module();
 	try{
 		return substream.seek_to_second(seconds, !!fast);
 	}catch (std::exception &e){
@@ -163,8 +166,8 @@ static RationalValue substream_seek_to_second(DecoderSubstreamPtr instance, Rati
 }
 
 MetadataPtr decoder_substream_get_metadata(DecoderSubstreamPtr instance){
-	auto &substream = *(FlacDecoderSubstream *)instance;
-	auto &module = substream.get_parent().get_module();
+	auto &substream = *(AbstractFlacDecoderSubstream *)instance;
+	auto &module = *substream.get_parent().get_module();
 	try{
 		return substream.get_metadata();
 	}catch (std::exception &e){

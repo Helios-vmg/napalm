@@ -10,16 +10,17 @@ std::string OggMetadata::OPUS                   = "OPUS";
 std::string OggMetadata::PART                   = "PART";
 std::string OggMetadata::TITLE                  = "TITLE";
 std::string OggMetadata::TRACKNUMBER            = "TRACKNUMBER";
+std::string OggMetadata::CUESHEET               = "CUESHEET";
+std::string OggMetadata::REPLAYGAIN_TRACK_GAIN  = "REPLAYGAIN_TRACK_GAIN";
+std::string OggMetadata::REPLAYGAIN_TRACK_PEAK  = "REPLAYGAIN_TRACK_PEAK";
+std::string OggMetadata::REPLAYGAIN_ALBUM_GAIN  = "REPLAYGAIN_ALBUM_GAIN";
+std::string OggMetadata::REPLAYGAIN_ALBUM_PEAK  = "REPLAYGAIN_ALBUM_PEAK";
 std::string OggMetadata::empty_string;
-static std::string REPLAYGAIN_TRACK_GAIN        = "REPLAYGAIN_TRACK_GAIN";
-static std::string REPLAYGAIN_TRACK_PEAK        = "REPLAYGAIN_TRACK_PEAK";
-static std::string REPLAYGAIN_ALBUM_GAIN        = "REPLAYGAIN_ALBUM_GAIN";
-static std::string REPLAYGAIN_ALBUM_PEAK        = "REPLAYGAIN_ALBUM_PEAK";
 static const std::string * const replaygain_strings[] = {
-	&REPLAYGAIN_TRACK_GAIN,
-	&REPLAYGAIN_TRACK_PEAK,
-	&REPLAYGAIN_ALBUM_GAIN,
-	&REPLAYGAIN_ALBUM_PEAK,
+	&OggMetadata::REPLAYGAIN_TRACK_GAIN,
+	&OggMetadata::REPLAYGAIN_TRACK_PEAK,
+	&OggMetadata::REPLAYGAIN_ALBUM_GAIN,
+	&OggMetadata::REPLAYGAIN_ALBUM_PEAK,
 };
 
 template <typename T1, typename T2, typename T3>

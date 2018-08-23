@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <boost/rational.hpp>
 #include <vector>
+#include <memory>
 
 typedef boost::rational<std::int64_t> rational_t;
 
@@ -56,11 +57,11 @@ boost::rational<T> to_rational(double x){
 }
 
 class DecoderSubstream;
+class Module;
 
 class Decoder{
 	std::int64_t position = 0;
 protected:
-	WrappedExternalIO io;
 	struct StreamRange{
 		rational_t time_begin;
 		rational_t time_length;
@@ -69,6 +70,7 @@ protected:
 	};
 	std::vector<StreamRange> stream_ranges;
 	std::int64_t time_resolution = -1;
+	Module *module;
 
 	virtual AudioBuffer *internal_read(const AudioFormat &, size_t extra_data, int substream_index) = 0;
 	std::int64_t time_to_sample(const rational_t &time) const{
@@ -87,7 +89,7 @@ protected:
 		return -1;
 	}
 public:
-	Decoder(const ExternalIO &io): io(io){}
+	Decoder(Module *module = nullptr): module(module){}
 	virtual ~Decoder(){}
 	AudioBuffer *read(const AudioFormat &af, size_t extra_data, int substream_index){
 		auto ret = this->internal_read(af, extra_data, substream_index);
@@ -121,6 +123,9 @@ public:
 		return 1;
 	}
 	virtual DecoderSubstream *get_substream(int index) = 0;
+	Module *get_module() const{
+		return this->module;
+	}
 };
 
 class DecoderSubstream{
@@ -193,6 +198,9 @@ public:
 		return this->format;
 	}
 	virtual void set_number_format_hint(NumberFormat nf){}
+	virtual Decoder &get_parent(){
+		return this->parent;
+	}
 };
 
 inline DecoderSubstream::~DecoderSubstream(){}

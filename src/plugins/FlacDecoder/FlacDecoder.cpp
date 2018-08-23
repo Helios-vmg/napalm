@@ -1,6 +1,9 @@
 #include "FlacDecoder.h"
 #include <stdexcept>
 #include <boost/integer.hpp>
+#include <libcue.h>
+
+static const int cue_divisions_per_second = 75;
 
 const char *to_string(FLAC__StreamDecoderInitStatus status){
 	switch (status){
@@ -51,24 +54,59 @@ bool is_native_flac(const std::string &path){
 		tolower(path[dot + 3]) == 'c';
 }
 
-FlacDecoder::FlacDecoder(const char *path, const ExternalIO &io, Module *module):
-		Decoder(io),
-		module(module),
+FlacDecoder::FlacDecoder(const char *path, const SlicedIO &io, Module *module):
+		Decoder(module),
+		io(io),
 		path(path){
-	this->seekable = !!io.seek;
-	this->tellable = !!io.tell;
+	this->seekable = this->io.can_seek();
+	this->io.seek(0, SEEK_SET);
 	this->set_md5_checking(false);
 	this->set_metadata_respond_all();
+#if 0
+	if (!is_native_flac(this->path)){
+		ogg_sync_state sync;
+		ogg_sync_init(&sync);
+		
+		auto buffer = ogg_sync_buffer(&sync, 4096);
+		auto bytes = this->io.read(buffer, 4096);
+		ogg_sync_wrote(&sync, (long)bytes);
+		ogg_page page;
+		if (ogg_sync_pageout(&sync, &page) == 1){
+			ogg_stream_state stream;
+			ogg_stream_init(&stream, ogg_page_serialno(&page));
+			vorbis_info info;
+			vorbis_info_init(&info);
+			vorbis_comment comment;
+			vorbis_comment_init(&comment);
+			if (ogg_stream_pagein(&stream, &page) >= 0){
+				ogg_packet packet;
+				auto ogg_stream_packetout_result = ogg_stream_packetout(&stream, &packet);
+				if (ogg_stream_packetout_result == 1){
+					__debugbreak();
+				}
+				ogg_packet_clear(&packet);
+			}
+			vorbis_comment_clear(&comment);
+			vorbis_info_clear(&info);
+			ogg_stream_destroy(&stream);
+		}
+
+		//...
+		ogg_sync_destroy(&sync);
+	}
+#endif
 	auto status = is_native_flac(this->path) ? this->init() : this->init_ogg();
 	if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		throw std::runtime_error((std::string)"FLAC initialization failed: " + to_string(status));
-	this->process_until_end_of_metadata();
-	StreamRange sr;
-	sr.time_begin = 0;
-	sr.sample_begin = 0;
-	sr.frequency = this->format->freq;
-	sr.time_length = this->get_seconds_length_internal();
-	this->stream_ranges.push_back(sr);
+	auto status2 = this->process_until_end_of_metadata();
+	if (!this->parse_cuesheet() && !this->native_cuesheet){
+		StreamRange sr;
+		sr.time_begin = 0;
+		sr.sample_begin = 0;
+		sr.frequency = this->format->freq;
+		sr.time_length = this->get_seconds_length_internal();
+		this->stream_ranges.push_back(sr);
+	}
 }
 
 FlacDecoder::~FlacDecoder(){
@@ -222,7 +260,7 @@ FLAC__StreamDecoderLengthStatus FlacDecoder::length_callback(FLAC__uint64 *strea
 		*stream_length = this->length;
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 	}
-	if (!this->tellable){
+	if (!this->io.can_seek()){
 		this->length = length_unsupported;
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_UNSUPPORTED;
 	}
@@ -239,51 +277,128 @@ FLAC__StreamDecoderLengthStatus FlacDecoder::length_callback(FLAC__uint64 *strea
 	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 }
 
+void FlacDecoder::read_stream_info(const FLAC__StreamMetadata_StreamInfo &stream_info){
+	AudioFormat format;
+	switch (stream_info.bits_per_sample){
+		case 8:
+			format.format = IntS8;
+			break;
+		case 16:
+			format.format = IntS16;
+			break;
+		case 24:
+			format.format = IntS24;
+			break;
+		case 32:
+			format.format = IntS32;
+			break;
+		default:
+			format.format = Invalid;
+			break;
+	}
+	format.channels = stream_info.channels;
+	format.freq = stream_info.sample_rate;
+	this->format = format;
+	this->time_resolution = this->format->freq;
+}
+
+void FlacDecoder::read_cuesheet(const FLAC__StreamMetadata_CueSheet &cuesheet){
+	this->native_cuesheet = true;
+	for (decltype(cuesheet.num_tracks) i = 0; i < cuesheet.num_tracks - 1; i++){
+		StreamRange range;
+		range.sample_begin = cuesheet.tracks[i].offset;
+		range.time_begin = rational_t(range.sample_begin, 1);
+		range.time_length = rational_t(cuesheet.tracks[i + 1].offset, 1) - range.time_begin;
+		range.frequency = 0;
+		this->stream_ranges.push_back(range);
+		//Chapters are ignored (for now).
+	}
+}
+
+void FlacDecoder::read_picture(const FLAC__StreamMetadata_Picture &picture){
+	this->metadata.set_front_cover(picture.data, picture.data_length);
+}
+
 void FlacDecoder::metadata_callback(const FLAC__StreamMetadata *metadata){
 	switch (metadata->type){
 		case FLAC__METADATA_TYPE_VORBIS_COMMENT:
 			this->read_vorbis_comments(metadata->data.vorbis_comment);
 			break;
 		case FLAC__METADATA_TYPE_STREAMINFO:
-			{
-				const auto &stream_info = metadata->data.stream_info;
-				AudioFormat format;
-				switch (stream_info.bits_per_sample){
-					case 8:
-						format.format = IntS8;
-						break;
-					case 16:
-						format.format = IntS16;
-						break;
-					case 24:
-						format.format = IntS24;
-						break;
-					case 32:
-						format.format = IntS32;
-						break;
-					default:
-						format.format = Invalid;
-						break;
-				}
-				format.channels = stream_info.channels;
-				format.freq = stream_info.sample_rate;
-				this->format = format;
-				this->time_resolution = this->format->freq;
-			}
-			break;
-		case FLAC__METADATA_TYPE_PADDING:
-			break;
-		case FLAC__METADATA_TYPE_APPLICATION:
-			break;
-		case FLAC__METADATA_TYPE_SEEKTABLE:
+			this->read_stream_info(metadata->data.stream_info);
 			break;
 		case FLAC__METADATA_TYPE_CUESHEET:
+			this->read_cuesheet(metadata->data.cue_sheet);
 			break;
 		case FLAC__METADATA_TYPE_PICTURE:
+			this->read_picture(metadata->data.picture);
 			break;
 		default:
 			break;
 	}
+}
+
+void process_cdtext(OggMetadata &metadata, Cdtext *cdtext){
+	if (!cdtext)
+		return;
+	auto artist = cdtext_get(PTI_PERFORMER, cdtext);
+	if (artist)
+		metadata.add(OggMetadata::ARTIST, artist);
+}
+
+bool FlacDecoder::parse_cuesheet(){
+	auto &cuesheet = this->metadata.cuesheet();
+	if (!cuesheet.size())
+		return false;
+	std::unique_ptr<Cd, void (*)(Cd *)> cd(cue_parse_string(cuesheet.c_str()), cd_delete);
+	if (!cd)
+		return false;
+	this->stream_count = cd_get_ntrack(cd.get());
+	if (this->stream_count <= 0){
+		this->stream_count = 1;
+		return false;
+	}
+
+	if (!this->native_cuesheet){
+		std::vector<StreamRange> ranges;
+		for (int i = 0; i < this->stream_count; i++){
+			auto track = cd_get_track(cd.get(), i + 1);
+			if (!track)
+				return false;
+			StreamRange range;
+			range.time_begin = rational_t(track_get_start(track), cue_divisions_per_second);
+			range.time_length = rational_t(track_get_length(track), cue_divisions_per_second);
+			range.frequency = this->format->freq;
+			auto sample = range.time_begin * range.frequency;
+			range.sample_begin = sample.numerator() / sample.denominator();
+			ranges.push_back(range);
+		}
+		this->stream_ranges = std::move(ranges);
+	}
+
+	process_cdtext(this->metadata, cd_get_cdtext(cd.get()));
+
+	for (int i = 0; i < this->stream_count; i++){
+		auto track = cd_get_track(cd.get(), i + 1);
+		if (!track)
+			continue;
+		OggMetadata metadata;
+		process_cdtext(metadata, track_get_cdtext(track));
+		
+		auto rem = track_get_rem(track);
+		if (rem){
+			auto gain = rem_get(REM_REPLAYGAIN_TRACK_GAIN, rem);
+			if (gain){
+				metadata.add(OggMetadata::REPLAYGAIN_ALBUM_GAIN, gain);
+			}
+			auto peak = rem_get(REM_REPLAYGAIN_TRACK_PEAK, rem);
+			if (peak){
+				metadata.add(OggMetadata::REPLAYGAIN_ALBUM_PEAK, peak);
+			}
+		}
+	}
+
+	return true;
 }
 
 void FlacDecoder::read_vorbis_comments(const FLAC__StreamMetadata_VorbisComment &comments){
@@ -351,7 +466,7 @@ FlacDecoderSubstream::FlacDecoderSubstream(
 		std::int64_t length,
 		const rational_t &first_moment,
 		const rational_t &seconds_length):
-			DecoderSubstream(parent, index, first_sample, length, first_moment, seconds_length),
+			AbstractFlacDecoderSubstream(parent, index, first_sample, length, first_moment, seconds_length),
 			flac_parent(parent){
 	this->format = this->flac_parent.get_format();
 }

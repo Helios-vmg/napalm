@@ -32,7 +32,8 @@ static const char *ogg_code_to_string(int e){
 }
 
 OggDecoder::OggDecoder(const char *path, const ExternalIO &io, Module *module):
-		Decoder(io),
+		Decoder(module),
+		io(io),
 		module(module),
 		path(path){
 	ov_callbacks cb;

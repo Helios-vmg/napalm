@@ -7,6 +7,7 @@
 #include <vorbis/vorbisfile.h>
 
 class OggDecoder : public Decoder{
+	WrappedExternalIO io;
 	Module *module;
 	std::string path;
 	OggVorbis_File ogg_file;
