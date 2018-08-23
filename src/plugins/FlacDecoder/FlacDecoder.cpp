@@ -62,39 +62,6 @@ FlacDecoder::FlacDecoder(const char *path, const SlicedIO &io, Module *module):
 	this->io.seek(0, SEEK_SET);
 	this->set_md5_checking(false);
 	this->set_metadata_respond_all();
-#if 0
-	if (!is_native_flac(this->path)){
-		ogg_sync_state sync;
-		ogg_sync_init(&sync);
-		
-		auto buffer = ogg_sync_buffer(&sync, 4096);
-		auto bytes = this->io.read(buffer, 4096);
-		ogg_sync_wrote(&sync, (long)bytes);
-		ogg_page page;
-		if (ogg_sync_pageout(&sync, &page) == 1){
-			ogg_stream_state stream;
-			ogg_stream_init(&stream, ogg_page_serialno(&page));
-			vorbis_info info;
-			vorbis_info_init(&info);
-			vorbis_comment comment;
-			vorbis_comment_init(&comment);
-			if (ogg_stream_pagein(&stream, &page) >= 0){
-				ogg_packet packet;
-				auto ogg_stream_packetout_result = ogg_stream_packetout(&stream, &packet);
-				if (ogg_stream_packetout_result == 1){
-					__debugbreak();
-				}
-				ogg_packet_clear(&packet);
-			}
-			vorbis_comment_clear(&comment);
-			vorbis_info_clear(&info);
-			ogg_stream_destroy(&stream);
-		}
-
-		//...
-		ogg_sync_destroy(&sync);
-	}
-#endif
 	auto status = is_native_flac(this->path) ? this->init() : this->init_ogg();
 	if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		throw std::runtime_error((std::string)"FLAC initialization failed: " + to_string(status));

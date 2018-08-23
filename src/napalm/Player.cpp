@@ -240,9 +240,9 @@ void Player::decoding_function(){
 				case State::Decode:
 					buffer = np->read();
 					if (!buffer || !buffer->sample_count){
+						last_stream = std::move(np);
 						{
 							LOCK_MUTEX2(this->internal_mutex, "Player::decoding_function(), State::Decode");
-							last_stream = std::move(np);
 							this->playlist.next_track();
 						}
 						external_lock = L();
@@ -262,50 +262,6 @@ void Player::decoding_function(){
 					continue;
 			}
 		}
-
-#if 0
-		while (true){
-			audio_buffer_t buffer(nullptr, release_buffer);
-			{
-				LOCK_MUTEX2(this->mutex, "Player::decoding_function()");
-				if (this->status == Status::Stopped)
-					break;
-				if (!this->now_playing){
-					if (!this->playlist.size()){
-						this->status = Status::Stopped;
-						break;
-					}
-					auto &current = this->playlist.get_current();
-					if (!decoder || decoder->get_stream().get_path() != current.get_path())
-						decoder = this->internal_load(current.get_path());
-					auto stream = decoder->get_substream(current.get_subtrack());
-					stream->seek_to_sample(0, false);
-					auto new_src_format = stream->get_audio_format();
-					if (!temp || new_src_format != src_format)
-						this->now_playing = build_filter_chain(std::move(stream), new_src_format, this->final_format);
-					else
-						this->now_playing = rebuild_filter_chain(std::move(stream), src_format, new_src_format, this->final_format);
-					src_format = new_src_format;
-				}
-				dst_format = this->final_format;
-				buffer = this->now_playing->read();
-				if (!buffer || !buffer->sample_count){
-					temp = std::move(this->now_playing);
-					this->playlist.next_track();
-					continue;
-				}
-
-				auto &extra_data = get_extra_data<BufferExtraData>(buffer);
-				extra_data.flags = 0;
-				if (this->executing_seek){
-					this->executing_seek = false;
-					extra_data.flags |= BufferExtraData_flags::seek_complete;
-				}
-			}
-			//output.write((const char *)buffer->data, buffer->sample_count * dst_format.channels * sizeof_NumberFormat(dst_format.format));
-			buffer_index = this->queue.push_to_queue(std::move(buffer), dst_format, buffer_index);
-		}
-#endif
 	}catch (...){
 	}
 	this->now_playing.reset();
