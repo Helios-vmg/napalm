@@ -23,7 +23,7 @@ class AudioQueue{
 		*exit_queue = nullptr;
 	std::mutex mutex;
 	Event event;
-	rational_t limit = {10, 1};
+	rational_t limit = {1, 1};
 	rational_t size = {0, 1};
 	size_t queue_elements = 0;
 	AudioFormat *format;
