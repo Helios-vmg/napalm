@@ -533,33 +533,39 @@ bool DefaultWasapiOutputDevice::handle_event(DWORD wait_result){
 }
 
 void SpecificWasapiOutputDevice::get_more_samples(){
-	UINT32 samples_queued;
-	auto result = this->audio_client->GetCurrentPadding(&samples_queued);
-	if (!SUCCEEDED(result))
-		return;
+	UINT32 samples_queued = 0;
+	HRESULT result;
+	if (this->audio_client){
+		result = this->audio_client->GetCurrentPadding(&samples_queued);
+		if (!SUCCEEDED(result))
+			return;
+	}
 	auto samples_to_read = this->buffer_size - samples_queued;
-	BYTE *buffer;
-	result = this->render_client->GetBuffer((UINT32)samples_to_read, &buffer);
-	if (!SUCCEEDED(result))
-		return;
-	auto samples_read = this->get_audio(buffer, samples_to_read, samples_queued);
+	BYTE *buffer = nullptr;
+	if (this->render_client){
+		result = this->render_client->GetBuffer((UINT32)samples_to_read, &buffer);
+		if (!SUCCEEDED(result))
+			return;
+	}
+	auto samples_read = !buffer ? 0 : this->get_audio(buffer, samples_to_read, samples_queued);
 	DWORD flags = 0;
-	double underflow = 0;
+	//double underflow = 0;
 	if (samples_read){
 		auto bytes_read = samples_read * this->bytes_per_sample;
 		auto zeroes = samples_to_read * this->bytes_per_sample - bytes_read;
 		if (zeroes){
-			underflow = (double)(samples_to_read - samples_read) / this->selected_format.freq;
+			//underflow = (double)(samples_to_read - samples_read) / this->selected_format.freq;
 			memset(buffer + bytes_read, 0, zeroes);
 		}
 	}else{
 		flags = AUDCLNT_BUFFERFLAGS_SILENT;
 		samples_read = samples_to_read;
-			underflow = (double)samples_to_read / this->selected_format.freq;
+		//underflow = (double)samples_to_read / this->selected_format.freq;
 	}
 	//if (underflow)
 	//	std::cout << "Underflow detected. " << underflow * 1000 << " ms.\n";
-	result = this->render_client->ReleaseBuffer((UINT32)samples_read, flags);
+	if (this->render_client)
+		result = this->render_client->ReleaseBuffer((UINT32)samples_read, flags);
 }
 
 class SessionNotifier : public IAudioSessionEvents, public IMMNotificationClient{
@@ -702,15 +708,18 @@ void DefaultWasapiOutputDevice::initialize_stream_switching(){
 
 bool DefaultWasapiOutputDevice::switch_streams(){
 	try{
-		auto result = this->audio_client->Stop();
-		if (!SUCCEEDED(result))
-			return false;
-		result = this->session_control->UnregisterAudioSessionNotification(this->notifier.get());
-		if (!SUCCEEDED(result))
-			return false;
-		result = this->enumerator->UnregisterEndpointNotificationCallback(this->notifier.get());
-		if (!SUCCEEDED(result))
-			return false;
+		HRESULT result;
+		if (this->audio_client){
+			result = this->audio_client->Stop();
+			if (!SUCCEEDED(result))
+				return false;
+		}
+		//result = this->session_control->UnregisterAudioSessionNotification(this->notifier.get());
+		//if (!SUCCEEDED(result))
+		//	return false;
+		//result = this->enumerator->UnregisterEndpointNotificationCallback(this->notifier.get());
+		//if (!SUCCEEDED(result))
+		//	return false;
 		this->session_control.reset();
 		this->render_client.reset();
 		this->audio_client.reset();
@@ -722,18 +731,24 @@ bool DefaultWasapiOutputDevice::switch_streams(){
 
 		IMMDevice *device;
 		result = this->enumerator->GetDefaultAudioEndpoint(eRender, this->role, &device);
-		if (!SUCCEEDED(result))
-			return false;
-		this->device = to_unique(device);
-
-		this->set_client();
-		auto property_store = this->get_property_store();
-		this->set_format(*property_store);
-		this->notify_client(&this->formats[0]);
-		this->initialize_audio_engine();
-		this->initialize_stream_switching();
-		ResetEvent(this->stream_switch_complete_event.get());
-		this->start_client();
+		if (!SUCCEEDED(result)){
+			if (result != E_NOTFOUND)
+				return false;
+			//No devices were found to use. Continue anyway.
+			AudioFormat invalid{NumberFormat::Invalid, 0, 0};
+			this->notify_client(&invalid);
+			ResetEvent(this->stream_switch_complete_event.get());
+		}else{
+			this->device = to_unique(device);
+			this->set_client();
+			auto property_store = this->get_property_store();
+			this->set_format(*property_store);
+			this->notify_client(&this->formats[0]);
+			this->initialize_audio_engine();
+			//this->initialize_stream_switching();
+			ResetEvent(this->stream_switch_complete_event.get());
+			this->start_client();
+		}
 		*this->switching_streams = false;
 		return true;
 	}catch (std::exception &){

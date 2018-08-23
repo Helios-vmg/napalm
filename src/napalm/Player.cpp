@@ -305,6 +305,8 @@ void Player::open_output(){
 						return ret;
 					},
 					[this](const AudioFormat &af){
+						if (af.format == Invalid || !af.channels || !af.freq)
+							return;
 						this->audio_format_changed(af);
 					}
 				);
