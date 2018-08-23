@@ -39,8 +39,9 @@ class Player{
 	std::shared_ptr<OutputDevice> output_device;
 	AudioFormat final_format;
 	AudioQueue queue;
-	mutex_wrapper<std::recursive_mutex> mutex;
-	Status status = Status::Stopped;
+	mutex_wrapper<std::recursive_mutex> internal_mutex;
+	mutex_wrapper<std::mutex> external_mutex;
+	std::atomic<Status> status = Status::Stopped;
 	Playlist playlist;
 	std::thread decoding_thread;
 	rational_t current_time = {0, 1};
@@ -48,7 +49,7 @@ class Player{
 	Callbacks callbacks;
 	std::thread async_notifications_thread;
 	ThreadSafeCircularQueue<Notification> notification_queue;
-	bool executing_seek = false;
+	std::atomic<bool> executing_seek = false;
 	
 	void load_plugins();
 	void open_output();

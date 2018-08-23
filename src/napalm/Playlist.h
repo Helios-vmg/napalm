@@ -11,7 +11,7 @@ class Track{
 	int subtrack;
 	AudioFormat format;
 	rational_t duration;
-	std::unique_ptr<GenericMetadata> metadata;
+	std::shared_ptr<GenericMetadata> metadata;
 public:
 	Track() = default;
 	Track(Decoder &, int subtrack);

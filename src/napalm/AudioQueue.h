@@ -23,8 +23,9 @@ class AudioQueue{
 		*exit_queue = nullptr;
 	std::mutex mutex;
 	Event event;
-	rational_t limit = {1, 1};
+	rational_t limit = {10, 1};
 	rational_t size = {0, 1};
+	size_t queue_elements = 0;
 	AudioFormat *format;
 	AudioFormat expected_format = {Invalid, 0, 0};
 	std::uint64_t current_stream_id = std::numeric_limits<std::uint64_t>::max();

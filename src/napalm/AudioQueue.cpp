@@ -34,6 +34,7 @@ std::uint64_t AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat for
 					this->tail = this->head = buffer.release();
 				get_extra_data<BufferExtraData>(this->tail).sample_offset = 0;
 				this->next_buffer_index++;
+				this->queue_elements++;
 				break;
 			}
 		}
@@ -76,6 +77,7 @@ size_t AudioQueue::pop_buffer(rational_t &time, AudioQueueFlags &flags, void *vo
 				auto old = this->head;
 				this->size -= rational_t(old->sample_count, this->format->freq);
 				this->head = NEXT(this->head);
+				this->queue_elements--;
 				if (!this->head)
 					this->tail = nullptr;
 				NEXT(old) = this->exit_queue;

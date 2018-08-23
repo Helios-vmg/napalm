@@ -28,7 +28,7 @@ class mutex_wrapper{
 	const char *owner;
 public:
 	mutex_wrapper() = default;
-	void lock(const char *owner){
+	void lock(const char *owner = nullptr){
 		this->mutex.lock();
 		this->owner = owner;
 	}
