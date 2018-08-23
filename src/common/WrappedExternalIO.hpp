@@ -3,6 +3,7 @@
 #include "external_io.h"
 #include <vector>
 #include <cstdint>
+#include <algorithm>
 
 class WrappedExternalIO{
 	ExternalIO io;
@@ -45,7 +46,8 @@ public:
 class SlicedIO{
 	ExternalIO io;
 	std::int64_t beginning = 0,
-		length = std::numeric_limits<std::int64_t>::max();
+		length = std::numeric_limits<std::int64_t>::max(),
+		position = 0;
 public:
 	SlicedIO(const ExternalIO &io): io(io){
 		if (!this->io.read)
@@ -84,7 +86,10 @@ public:
 	size_t read(void *dst, size_t dst_size){
 		if (!this->io.read)
 			return 0;
-		return this->io.read(this->io.user_data, dst, dst_size);
+		auto read_size = std::min<size_t>(dst_size, this->length - this->position);
+		auto ret = this->io.read(this->io.user_data, dst, read_size);
+		this->position += ret;
+		return ret;
 	}
 	size_t write(const void *src, size_t src_size){
 		return 0;
@@ -97,7 +102,8 @@ public:
 				case SEEK_SET:
 					if (offset < 0 || offset > this->length)
 						return -1;
-					return this->io.seek(this->io.user_data, offset + this->beginning, whence) - this->beginning;
+					this->position = this->io.seek(this->io.user_data, offset + this->beginning, whence) - this->beginning;
+					return this->position;
 				case SEEK_CUR:
 					offset += this->tell();
 					whence = SEEK_SET;
@@ -113,6 +119,6 @@ public:
 	std::int64_t tell(){
 		if (!this->io.tell)
 			return -1;
-		return this->io.tell(this->io.user_data) - this->beginning;
+		return this->position = this->io.tell(this->io.user_data) - this->beginning;
 	}
 };
