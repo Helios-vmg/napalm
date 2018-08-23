@@ -70,7 +70,9 @@ void OggDecoder::init_time_resolution(){
 		sr.frequency = info->rate;
 		sr.time_begin = time_accum;
 		sr.sample_begin = sample_accum;
-		time_accum += sr.time_length = rational_t(length, info->rate);
+		sr.sample_length = length;
+		sr.time_length = rational_t(length, info->rate);
+		time_accum += sr.time_length;
 		sample_accum += length;
 		this->stream_ranges.push_back(sr);
 	}

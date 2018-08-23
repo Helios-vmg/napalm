@@ -66,6 +66,7 @@ protected:
 		rational_t time_begin;
 		rational_t time_length;
 		std::int64_t sample_begin;
+		std::int64_t sample_length;
 		int frequency;
 	};
 	std::vector<StreamRange> stream_ranges;
@@ -84,6 +85,17 @@ protected:
 		}
 		auto conv = (time - it->time_begin) * it->frequency;
 		return it->sample_begin + conv.numerator() / conv.denominator();
+	}
+	rational_t sample_to_time(std::int64_t sample) const{
+		if (sample < 0)
+			return -1;
+		rational_t accum = 0;
+		for (auto &sr : this->stream_ranges){
+			if (sr.sample_begin + sr.sample_length >= sample)
+				return accum + rational_t(sample - sr.sample_begin, sr.frequency);
+			accum += sr.time_length;
+		}
+		return -1;
 	}
 	virtual std::int64_t seek_to_sample_internal(std::int64_t pos, bool fast){
 		return -1;
@@ -114,7 +126,7 @@ public:
 		auto ret = this->seek_to_sample(sample, fast);
 		if (ret < 0)
 			return rational_t(-1, 1);
-		return rational_t(ret, this->time_resolution);
+		return this->sample_to_time(ret);
 	}
 	virtual std::int64_t sample_tell(){
 		return this->position;

@@ -104,7 +104,8 @@ FlacDecoder::FlacDecoder(const char *path, const SlicedIO &io, Module *module):
 		sr.time_begin = 0;
 		sr.sample_begin = 0;
 		sr.frequency = this->format->freq;
-		sr.time_length = this->get_seconds_length_internal();
+		sr.sample_length = this->get_pcm_length_internal();
+		sr.time_length = rational_t(sr.sample_length, this->format->freq);
 		this->stream_ranges.push_back(sr);
 	}
 }
@@ -307,6 +308,7 @@ void FlacDecoder::read_cuesheet(const FLAC__StreamMetadata_CueSheet &cuesheet){
 	for (decltype(cuesheet.num_tracks) i = 0; i < cuesheet.num_tracks - 1; i++){
 		StreamRange range;
 		range.sample_begin = cuesheet.tracks[i].offset;
+		range.sample_length = cuesheet.tracks[i + 1].offset - range.sample_begin;
 		range.time_begin = rational_t(range.sample_begin, 1);
 		range.time_length = rational_t(cuesheet.tracks[i + 1].offset, 1) - range.time_begin;
 		range.frequency = 0;
@@ -369,8 +371,10 @@ bool FlacDecoder::parse_cuesheet(){
 			range.time_begin = rational_t(track_get_start(track), cue_divisions_per_second);
 			range.time_length = rational_t(track_get_length(track), cue_divisions_per_second);
 			range.frequency = this->format->freq;
-			auto sample = range.time_begin * range.frequency;
-			range.sample_begin = sample.numerator() / sample.denominator();
+			auto sample1 = range.time_begin * range.frequency;
+			range.sample_begin = sample1.numerator() / sample1.denominator();
+			auto sample2 = range.time_length * range.frequency;
+			range.sample_length = sample2.numerator() / sample2.denominator();
 			ranges.push_back(range);
 		}
 		this->stream_ranges = std::move(ranges);
