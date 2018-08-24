@@ -160,5 +160,7 @@ rational_t DecoderSubstream::seek_to_second(const rational_t &time, bool fast){
 	if (!f)
 		return -1;
 	auto ret = to_rational(f(this->substream_ptr.get(), to_RationalValue(time), fast));
+	if (ret < 0)
+		return ret;
 	return this->current_time = ret;
 }
