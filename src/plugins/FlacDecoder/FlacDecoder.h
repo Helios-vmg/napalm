@@ -26,10 +26,9 @@ class FlacDecoder : public Decoder, public FLAC::Decoder::Stream{
 	boost::optional<AudioFormat> format;
 	bool seekable,
 		at_eof = false;
-	int stream_count = 1;
 	static const std::int64_t length_unset = -1;
 	static const std::int64_t length_unsupported = -2;
-	std::int64_t length = length_unset;
+	std::int64_t byte_length = length_unset;
 	size_t extra_data_size = 32;
 	OggMetadata metadata;
 	bool native_cuesheet = false;
@@ -65,7 +64,7 @@ public:
 	FlacDecoder(const char *path, const SlicedIO &io, Module *module);
 	~FlacDecoder();
 	int get_substream_count() override{
-		return this->stream_count;
+		return (int)this->stream_ranges.size();
 	}
 	DecoderSubstream *get_substream(int index) override;
 	const std::string &get_path() const{

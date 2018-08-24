@@ -222,14 +222,14 @@ FLAC__StreamDecoderTellStatus FlacDecoder::tell_callback(FLAC__uint64 *absolute_
 }
 
 FLAC__StreamDecoderLengthStatus FlacDecoder::length_callback(FLAC__uint64 *stream_length){
-	if (this->length == length_unsupported)
+	if (this->byte_length == length_unsupported)
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_UNSUPPORTED;
-	if (this->length != length_unset){
-		*stream_length = this->length;
+	if (this->byte_length != length_unset){
+		*stream_length = this->byte_length;
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 	}
 	if (!this->io.can_seek()){
-		this->length = length_unsupported;
+		this->byte_length = length_unsupported;
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_UNSUPPORTED;
 	}
 	auto saved = this->io.tell();
@@ -241,7 +241,7 @@ FLAC__StreamDecoderLengthStatus FlacDecoder::length_callback(FLAC__uint64 *strea
 	*stream_length = length;
 	if (saved != this->io.seek(saved, SEEK_SET))
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
-	this->length = length;
+	this->byte_length = length;
 	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 }
 
@@ -322,15 +322,13 @@ bool FlacDecoder::parse_cuesheet(){
 	std::unique_ptr<Cd, void (*)(Cd *)> cd(cue_parse_string(cuesheet.c_str()), cd_delete);
 	if (!cd)
 		return false;
-	this->stream_count = cd_get_ntrack(cd.get());
-	if (this->stream_count <= 0){
-		this->stream_count = 1;
+	auto stream_count = cd_get_ntrack(cd.get());
+	if (stream_count <= 0)
 		return false;
-	}
 
 	if (!this->native_cuesheet){
 		std::vector<StreamRange> ranges;
-		for (int i = 0; i < this->stream_count; i++){
+		for (int i = 0; i < stream_count; i++){
 			auto track = cd_get_track(cd.get(), i + 1);
 			if (!track)
 				return false;
@@ -345,11 +343,17 @@ bool FlacDecoder::parse_cuesheet(){
 			ranges.push_back(range);
 		}
 		this->stream_ranges = std::move(ranges);
+		if (this->stream_ranges.size()){
+			auto length = this->get_pcm_length_internal();
+			auto &last = this->stream_ranges.back();
+			last.sample_length = length - last.sample_begin;
+			last.time_length = rational_t(last.sample_length, last.frequency);
+		}
 	}
 
 	process_cdtext(this->metadata, cd_get_cdtext(cd.get()));
 
-	for (int i = 0; i < this->stream_count; i++){
+	for (int i = 0; i < stream_count; i++){
 		auto track = cd_get_track(cd.get(), i + 1);
 		if (!track)
 			continue;
@@ -406,9 +410,10 @@ void FlacDecoder::set_af(){
 }
 
 DecoderSubstream *FlacDecoder::get_substream(int index){
-	if (index < 0 || index >= this->stream_count)
+	if (index < 0 || index >= this->stream_ranges.size())
 		return nullptr;
-	return new FlacDecoderSubstream(*this, 0, 0, this->get_pcm_length_internal(), 0, this->get_seconds_length_internal());
+	auto &sr = this->stream_ranges[index];
+	return new FlacDecoderSubstream(*this, index, sr.sample_begin, sr.sample_length, sr.time_begin, sr.time_length);
 }
 
 AudioBuffer *FlacDecoder::internal_read(const AudioFormat &format, size_t extra_data, int substream_index){
