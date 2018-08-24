@@ -188,7 +188,7 @@ public:
 			auto new_pos = this->parent.seek_to_second(this->first_moment + r, fast);
 			if (new_pos >= 0)
 				this->position = (std::uint64_t)this->parent.sample_tell() - this->first_sample;
-			ret = to_RationalValue(new_pos);
+			ret = to_RationalValue(new_pos - this->first_moment);
 		}
 		return ret;
 	}
