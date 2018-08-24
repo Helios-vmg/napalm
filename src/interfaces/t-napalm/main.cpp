@@ -34,9 +34,7 @@ int main(){
 				player.stop();
 			}else if (line == "time"){
 				auto t = player.current_time();
-				std::cout <<
-					"Current time: " << absolute_format_time(t.first) << "\n"
-					"Total time:   " << absolute_format_time(t.second) << std::endl;
+				std::cout << "Current time: " << absolute_format_time(t) << std::endl;
 			}
 		}
 	}catch (std::exception &e){

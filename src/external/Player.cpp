@@ -2,16 +2,9 @@
 #include <utf8.cpp>
 #include <functional>
 #include <boost/dll.hpp>
+#include <RationalValue.h>
 
 typedef void *PlayerPtr;
-
-struct Rational{
-	std::int64_t numerator, denominator;
-};
-
-struct CurrentTime{
-	Rational current_time, total_time;
-};
 
 extern "C"{
 	typedef PlayerPtr (*create_player_f)();
@@ -20,7 +13,7 @@ extern "C"{
 	typedef void (*play_f)(PlayerPtr player);
 	typedef void (*pause_f)(PlayerPtr player);
 	typedef void (*stop_f)(PlayerPtr player);
-	typedef CurrentTime (*get_current_time_f)(PlayerPtr player);
+	typedef RationalValue (*get_current_time_f)(PlayerPtr player);
 }
 
 #if defined _WIN32 || defined _WIN64
@@ -145,12 +138,8 @@ public:
 	void stop(){
 		this->fp_stop(this->player);
 	}
-	std::pair<rational_t, rational_t> current_time(){
-		auto result = this->fp_get_current_time(this->player);
-		return {
-			{result.current_time.numerator, result.current_time.denominator},
-			{result.total_time.numerator, result.total_time.denominator},
-		};
+	rational_t current_time(){
+		return to_rational(this->fp_get_current_time(this->player));
 	}
 };
 
@@ -180,6 +169,6 @@ void Player::stop(){
 	this->pimpl->stop();
 }
 
-std::pair<rational_t, rational_t> Player::current_time(){
+rational_t Player::current_time(){
 	return this->pimpl->current_time();
 }

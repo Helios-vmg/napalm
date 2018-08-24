@@ -18,7 +18,7 @@ public:
 	void play();
 	void pause();
 	void stop();
-	std::pair<rational_t, rational_t> current_time();
+	rational_t current_time();
 };
 
 std::string format_time(rational_t time);
