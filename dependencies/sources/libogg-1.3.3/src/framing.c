@@ -805,7 +805,7 @@ int ogg_sync_pageout(ogg_sync_state *oy, ogg_page *og){
 /* add the incoming page to the stream state; we decompose the page
    into packet segments here as well. */
 
-int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
+int ogg_stream_pagein2(ogg_stream_state *os, ogg_page *og, int log_grow){
   unsigned char *header=og->header;
   unsigned char *body=og->body;
   long           bodysize=og->body_len;
@@ -891,7 +891,11 @@ int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
   }
 
   if(bodysize){
-    if(_os_body_expand(os,bodysize)) return -1;
+    if (log_grow){
+      if(os->body_storage-bodysize<=os->body_fill && _os_body_expand(os,os->body_storage)) return -1;
+    }else{
+      if(_os_body_expand(os,bodysize)) return -1;
+    }
     memcpy(os->body_data+os->body_fill,body,bodysize);
     os->body_fill+=bodysize;
   }
@@ -932,6 +936,10 @@ int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
   os->pageno=pageno+1;
 
   return(0);
+}
+
+int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
+  return ogg_stream_pagein2(os, og, 0);
 }
 
 /* clear things to an initial state.  Good to call, eg, before seeking */

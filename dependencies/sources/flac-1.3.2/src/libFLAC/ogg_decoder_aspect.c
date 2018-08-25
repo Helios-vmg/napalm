@@ -200,7 +200,18 @@ FLAC__OggDecoderAspectReadStatus FLAC__ogg_decoder_aspect_read_callback_wrapper(
 					aspect->stream_state.serialno = aspect->serial_number = ogg_page_serialno(&aspect->working_page);
 					aspect->need_serial_number = false;
 				}
-				if(ogg_stream_pagein(&aspect->stream_state, &aspect->working_page) == 0) {
+
+				/*
+				 * NOTE: Modification by Helios. ogg_stream_pagein2() does the same as ogg_stream_pagein,
+				 * except it grows the internal page buffer by doubling its size, rather than in increments.
+				 * Ogg FLAC has an edge case where if the encapsulated FLAC stream contains an image, this
+				 * creates a fairly large Ogg page, which takes many calls to _ogg_realloc() to read
+				 * completely. Using ogg_stream_pagein2() requires only logarithmically-many calls to
+				 * _ogg_realloc() to complete, making it substantially faster.
+				 * Unfortunately, this solution requires modifying the libogg API, so I doubt it will ever
+				 * get merged.
+				 */
+				if(ogg_stream_pagein2(&aspect->stream_state, &aspect->working_page, 1) == 0) {
 					aspect->have_working_page = true;
 					aspect->have_working_packet = false;
 				}
