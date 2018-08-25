@@ -147,6 +147,29 @@ void Player::set_callbacks(const Callbacks &callbacks){
 	this->callbacks = callbacks;
 }
 
+void *Player::get_front_cover(size_t playlist_position, size_t &size){
+	LOCK_MUTEX2(this->external_mutex, "Player::get_front_cover()");
+	if (playlist_position >= this->playlist.size()){
+		size = 0;
+		return nullptr;
+	}
+	auto &cover = this->playlist[playlist_position].get_metadata().front_cover();
+	size = cover.size();
+	if (!size)
+		return nullptr;
+	std::uint8_t *ret = new (std::nothrow) std::uint8_t[size];
+	if (!ret){
+		size = 0;
+		return nullptr;
+	}
+	memcpy(ret, cover.data(), size);
+	return ret;
+}
+
+void Player::release_front_cover(void *buffer){
+	delete (std::uint8_t *)buffer;
+}
+
 void Player::get_playlist_state(size_t &size, size_t &position){
 	LOCK_MUTEX2(this->external_mutex, "Player::get_playlist_state()");
 	size = this->playlist.size();
@@ -182,6 +205,7 @@ BasicTrackInfo Player::get_basic_track_info(size_t playlist_position){
 
 void Player::decoding_function(){
 	std::shared_ptr<Decoder> decoder;
+	unsigned buffer_no = 0;
 	//std::ofstream output("output.raw", std::ios::binary);
 	auto buffer_index = this->queue.get_next_buffer_index();
 	try{
@@ -199,7 +223,8 @@ void Player::decoding_function(){
 		typedef std::unique_lock<decltype(this->external_mutex)> L;
 		L external_lock;
 		decltype(this->now_playing) np;
-		const Track *current_track;
+		std::string current_track_path;
+		int current_track_subtrack;
 		audio_buffer_t buffer(nullptr, release_buffer);
 		while (state != State::Done){
 			switch (state){
@@ -223,13 +248,15 @@ void Player::decoding_function(){
 							state = State::Done;
 							continue;
 						}
-						current_track = &this->playlist.get_current();
+						auto &track = this->playlist.get_current();
+						current_track_path = track.get_path();
+						current_track_subtrack = track.get_subtrack();
 						external_lock = L();
 					}
 					{
-						if (!decoder || decoder->get_stream().get_path() != current_track->get_path())
-							decoder = this->internal_load(current_track->get_path());
-						auto stream = decoder->get_substream(current_track->get_subtrack());
+						if (!decoder || decoder->get_stream().get_path() != current_track_path)
+							decoder = this->internal_load(current_track_path);
+						auto stream = decoder->get_substream(current_track_subtrack);
 						stream->seek_to_sample(0, false);
 						auto new_src_format = stream->get_audio_format();
 						if (!last_stream || new_src_format != src_format)
@@ -256,13 +283,19 @@ void Player::decoding_function(){
 					{
 						auto &extra_data = get_extra_data<BufferExtraData>(buffer);
 						extra_data.flags = 0;
-						if (this->executing_seek.exchange(false))
+						extra_data.buffer_no = buffer_no++;
+						bool clear_seek = false;
+						if (this->executing_seek){
 							extra_data.flags |= BufferExtraData_flags::seek_complete;
+							clear_seek = true;
+						}
+						this->now_playing = std::move(np);
+						external_lock = L();
+						bool pushed = this->queue.push_to_queue(std::move(buffer), dst_format, buffer_index);
+						if (pushed && clear_seek)
+							this->executing_seek = false;
+						state = State::Initial;
 					}
-					this->now_playing = std::move(np);
-					external_lock = L();
-					buffer_index = this->queue.push_to_queue(std::move(buffer), dst_format, buffer_index);
-					state = State::Initial;
 					continue;
 			}
 		}

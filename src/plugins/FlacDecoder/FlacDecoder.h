@@ -29,8 +29,10 @@ class FlacDecoder : public Decoder, public FLAC::Decoder::Stream{
 	static const std::int64_t length_unset = -1;
 	static const std::int64_t length_unsupported = -2;
 	std::int64_t byte_length = length_unset;
+	std::int64_t sample_length = length_unset;
 	size_t extra_data_size = 32;
 	OggMetadata metadata;
+	std::vector<OggMetadata> track_metadata;
 	bool native_cuesheet = false;
 
 	FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame *frame, const FLAC__int32 * const *buffer) override;
@@ -83,11 +85,12 @@ public:
 
 class FlacDecoderSubstream : public AbstractFlacDecoderSubstream{
 	FlacDecoder &flac_parent;
-	//OggMetadata metadata;
+	OggMetadata metadata;
 public:
 	FlacDecoderSubstream(
 		FlacDecoder &parent,
 		int index,
+		const OggMetadata &metadata,
 		std::int64_t first_sample = 0,
 		std::int64_t length = std::numeric_limits<std::uint64_t>::max(),
 		const rational_t &first_moment = 0,
@@ -97,7 +100,7 @@ public:
 	}
 	void set_number_format_hint(NumberFormat nf){}
 	OggMetadataWrapper *get_metadata() override{
-		return new OggMetadataWrapper(this->flac_parent, this->flac_parent.get_metadata());
+		return new OggMetadataWrapper(this->flac_parent, this->metadata);
 	}
 };
 

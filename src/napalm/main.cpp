@@ -21,7 +21,7 @@ EXPORT void destroy_player(Player *player){
 	delete player;
 }
 
-EXPORT int load_file(Player *player, const char *path){
+EXPORT std::int32_t load_file(Player *player, const char *path){
 	try{
 		player->load_file(path);
 		return 1;
@@ -64,14 +64,14 @@ int saturate(size_t n){
 	return (int)n;
 }
 
-EXPORT void get_playlist_state(Player *player, int *size, int *position){
+EXPORT void get_playlist_state(Player *player, std::int32_t *size, std::int32_t *position){
 	size_t s, p;
 	player->get_playlist_state(s, p);
 	*size = saturate(s);
 	*position = saturate(p);
 }
 
-EXPORT BasicTrackInfo *get_basic_track_info(Player *player, int playlist_position){
+EXPORT BasicTrackInfo *get_basic_track_info(Player *player, std::int32_t playlist_position){
 	if (playlist_position < 0)
 		return nullptr;
 	auto ret = player->get_basic_track_info(playlist_position);
@@ -86,4 +86,19 @@ EXPORT void release_basic_track_info(BasicTrackInfo *info){
 
 EXPORT void seek_to_time(Player *player, RationalValue time){
 	player->seek(to_rational(time));
+}
+
+EXPORT void *get_front_cover(Player *player, std::int32_t playlist_position, std::int32_t *data_size){
+	if (playlist_position < 0)
+		return nullptr;
+	size_t size;
+	auto ret = player->get_front_cover(playlist_position, size);
+	if (size > std::numeric_limits<std::int32_t>::max())
+		size = std::numeric_limits<std::int32_t>::max();
+	*data_size = (int)size;
+	return ret;
+}
+
+EXPORT void release_front_cover(Player *player, void *buffer){
+	player->release_front_cover(buffer);
 }

@@ -19,7 +19,8 @@ void AudioQueue::set_expected_format(const AudioFormat &format){
 	this->expected_format = format;
 }
 
-std::uint64_t AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std::uint64_t buffer_index){
+bool AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std::uint64_t &buffer_index){
+	bool ret = false;
 	while (true){
 		{
 			LOCK_MUTEX(this->mutex, "AudioQueue::push_to_queue()");
@@ -35,13 +36,15 @@ std::uint64_t AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat for
 				get_extra_data<BufferExtraData>(this->tail).sample_offset = 0;
 				this->next_buffer_index++;
 				this->queue_elements++;
+				ret = true;
 				break;
 			}
 		}
 		this->event.wait();
 	}
 	clear_queue(this->exit_queue);
-	return this->next_buffer_index;
+	buffer_index = this->next_buffer_index;
+	return ret;
 }
 
 size_t AudioQueue::pop_buffer(rational_t &time, AudioQueueFlags &flags, void *void_dst, size_t size, size_t samples_queued){
@@ -65,8 +68,10 @@ size_t AudioQueue::pop_buffer(rational_t &time, AudioQueueFlags &flags, void *vo
 				this->current_stream_id = extra.stream_id;
 				flags |= AudioQueueFlags_values::track_changed;
 			}
-			if (extra.flags&BufferExtraData_flags::seek_complete)
+			if (extra.flags & BufferExtraData_flags::seek_complete){
 				flags |= AudioQueueFlags_values::seek_complete;
+				extra.flags &= ~BufferExtraData_flags::seek_complete;
+			}
 			auto copy_size = std::min(size, this->head->sample_count - extra.sample_offset);
 			memcpy(dst, this->head->data + extra.sample_offset * sample_size, copy_size * sample_size);
 			extra.sample_offset += copy_size;

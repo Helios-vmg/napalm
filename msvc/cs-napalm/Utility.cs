@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace cs_napalm
 {
@@ -75,5 +77,16 @@ namespace cs_napalm
             return AbsoluteFormatTime(time.ToDouble(), ms);
         }
 
+        private delegate void InvokeCallback();
+
+        public static bool FromMainThread(this Control c, Action f)
+        {
+            if (c.InvokeRequired)
+            {
+                c.BeginInvoke(new InvokeCallback(f));
+                return true;
+            }
+            return false;
+        }
     }
 }

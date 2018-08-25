@@ -25,14 +25,15 @@ OggFlacDecoder::OggFlacDecoder(const char *path, const ExternalIO &io, Module *m
 	if (!this->read_from_input())
 		throw std::runtime_error("Input is empty.");
 
-	this->find_all_streams();
+	this->find_all_ogg_streams();
+	this->find_all_flac_streams();
 }
 
 OggFlacDecoder::~OggFlacDecoder(){
 	ogg_sync_clear(&this->os);
 }
 
-void OggFlacDecoder::find_all_streams(){
+void OggFlacDecoder::find_all_ogg_streams(){
 	if (!this->can_seek())
 		return;
 	this->io.seek(0, SEEK_END);
@@ -44,13 +45,13 @@ void OggFlacDecoder::find_all_streams(){
 		return;
 	auto last_serial = ogg_page_serialno(&*page);
 	std::int64_t last_offset = 0;
-	this->streams.emplace_back(last_offset, last_serial);
+	this->ogg_streams.emplace_back(last_offset, last_serial);
 	while (true){
 		int next_serial;
 		auto next_offset = this->find_next_stream(last_serial, last_offset, this->length, next_serial);
 		if (next_offset < 0)
 			break;
-		this->streams.emplace_back(next_offset, next_serial);
+		this->ogg_streams.emplace_back(next_offset, next_serial);
 		last_serial = next_serial;
 		last_offset = next_offset;
 	}
@@ -136,6 +137,17 @@ std::int64_t OggFlacDecoder::get_page_boundary(std::int64_t offset, int &serial)
 	return offset;
 }
 
+void OggFlacDecoder::find_all_flac_streams(){
+	int index = 0;
+	for (auto &ogg : this->ogg_streams){
+		FlacDecoder flac(this->path.c_str(), OggFlacDecoderSubstream::get_io(*this, index), this->module);
+		auto subs = flac.get_substream_count();
+		for (int i = 0; i < subs; i++)
+			this->flac_streams.push_back(FlacStream{index, i, ogg.first});
+		index++;
+	}
+}
+
 boost::optional<ogg_page> OggFlacDecoder::read_page(int serial, bool any){
 	if (!any && this->returned_page){
 		if (this->returned_page->first == serial){
@@ -171,29 +183,33 @@ void OggFlacDecoder::return_page(const ogg_page &page, int serial){
 }
 
 DecoderSubstream *OggFlacDecoder::get_substream(int i){
-	if (i < 0 || i >= this->streams.size())
+	if (i < 0 || i >= this->flac_streams.size())
 		return nullptr;
+	auto stream = this->flac_streams[i];
 	if (this->io.can_seek())
-		this->io.seek(this->streams[i].first, SEEK_SET);
-	return new OggFlacDecoderSubstream(*this, i);
+		this->io.seek(stream.file_offset, SEEK_SET);
+	return new OggFlacDecoderSubstream(*this, stream.ogg_stream, stream.flac_stream, i);
 }
 
-OggFlacDecoderSubstream::OggFlacDecoderSubstream(OggFlacDecoder &parent, int stream_index):
-		AbstractFlacDecoderSubstream(parent, stream_index),
+OggFlacDecoderSubstream::OggFlacDecoderSubstream(OggFlacDecoder &parent, int ogg_stream, int flac_stream, int compound_stream):
+		AbstractFlacDecoderSubstream(parent, ogg_stream),
 		flac_parent(parent),
-		flac(parent.path.c_str(), get_io(parent, stream_index), parent.module){
-	this->substream.reset(static_cast<FlacDecoderSubstream *>(this->flac.get_substream(0)));
+		flac(parent.path.c_str(), get_io(parent, ogg_stream), parent.module),
+		ogg_stream(ogg_stream),
+		flac_stream(flac_stream),
+		compound_stream(compound_stream){
+	this->substream.reset(static_cast<FlacDecoderSubstream *>(this->flac.get_substream(flac_stream)));
 	this->length = this->substream->get_length_in_samples();
 	this->seconds_length = to_rational(this->substream->get_length_in_seconds());
 	this->format = this->substream->get_audio_format();
 }
 
-SlicedIO OggFlacDecoderSubstream::get_io(OggFlacDecoder &decoder, int serial){
-	if (!decoder.streams.size())
+SlicedIO OggFlacDecoderSubstream::get_io(OggFlacDecoder &decoder, int ogg_stream){
+	if (!decoder.ogg_streams.size())
 		return SlicedIO(decoder.io);
-	std::int64_t beggining = decoder.streams[serial].first,
+	std::int64_t beggining = decoder.ogg_streams[ogg_stream].first,
 		length = decoder.length - beggining;
-	if (decoder.streams.size() > serial + 1)
-		length = decoder.streams[serial + 1].first - beggining;
+	if (decoder.ogg_streams.size() > ogg_stream + 1)
+		length = decoder.ogg_streams[ogg_stream + 1].first - beggining;
 	return SlicedIO(decoder.io.get_io(), beggining, length);
 }

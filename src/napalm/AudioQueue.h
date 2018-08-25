@@ -35,7 +35,7 @@ class AudioQueue{
 public:
 	AudioQueue(AudioFormat &format): format(&format){}
 	~AudioQueue();
-	std::uint64_t push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std::uint64_t buffer_index);
+	bool push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std::uint64_t &buffer_index);
 	size_t pop_buffer(rational_t &time, AudioQueueFlags &flags, void *void_dst, size_t size, size_t samples_queued);
 	BufferExtraData flush_queue();
 	void set_expected_format(const AudioFormat &format);

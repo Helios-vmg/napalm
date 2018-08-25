@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
+using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Text;
-using System.Linq;
-using System.Runtime.CompilerServices;
+using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using cs_napalm.Properties;
 
@@ -21,16 +15,23 @@ namespace cs_napalm
         private const bool HighPrecisionTime = false;
         private Rational _currentDuration = new Rational(-1);
         private bool DraggingSeekbar = false;
+        private Bitmap DefaultCover;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            ArtCoverLabel.Image = new Bitmap(Resources.napalm_icon, new Size(ArtCoverLabel.Width, ArtCoverLabel.Height));
-            
+            DefaultCover = new Bitmap(Resources.napalm_icon, new Size(ArtCoverLabel.Width, ArtCoverLabel.Height));
+            DisplayDefaultCover();
+
             _timer.Interval = HighPrecisionTime ? 10 : 250;
-            _timer.Tick += (sender, args) => UpdateTime();
+            _timer.Tick += (sender, args) => OnTick();
             _timer.Enabled = true;
+        }
+
+        public void DisplayDefaultCover()
+        {
+            ArtCoverLabel.Image = DefaultCover;
         }
 
         public void Leaving()
@@ -73,6 +74,9 @@ namespace cs_napalm
         {
             InitPlayer();
             _player.Stop();
+            SetDuration(new Rational(0));
+            UpdateTime(new Rational(0), false, false);
+            DisplayDefaultCover();
         }
 
         private void PreviousTrackButton_Click(object sender, EventArgs e)
@@ -87,12 +91,12 @@ namespace cs_napalm
             _player.NextTrack();
         }
 
-        private void UpdateTime()
+        private void OnTick()
         {
-            UpdateTime(new Rational(-1));
+            UpdateTime(new Rational(-1), false, true);
         }
 
-        private void UpdateTime(Rational overrideValue)
+        private void UpdateTime(Rational overrideValue, bool hpt, bool timed)
         {
             if (_player == null)
             {
@@ -100,18 +104,13 @@ namespace cs_napalm
                 DurationLabel.Text = Utility.AbsoluteFormatTime(-1);
                 return;
             }
-            var time = _player.GetCurrentTime();
-            if (overrideValue < 0)
-            {
-                if (!DraggingSeekbar)
-                    TimeLabel.Text = Utility.AbsoluteFormatTime(time.ToDouble(), HighPrecisionTime);
-            }
-            else
-                TimeLabel.Text = Utility.AbsoluteFormatTime(_currentDuration*overrideValue, true);
+            var time = overrideValue < 0 ? _player.GetCurrentTime() : overrideValue;
+            if (timed && !DraggingSeekbar)
+                TimeLabel.Text = Utility.AbsoluteFormatTime(time.ToDouble(), DraggingSeekbar || hpt || HighPrecisionTime);
 
             var position = (time*100).ToIntTruncate();
             var duration = (_currentDuration*100).ToIntTruncate();
-            if (overrideValue < 0 && !DraggingSeekbar)
+            if (!DraggingSeekbar)
             {
                 if (position < 0)
                     SeekBar.Value = 0;
@@ -138,30 +137,13 @@ namespace cs_napalm
             }
         }
 
-        private void OnTrackChanged()
-        {
-            var state = _player.GetPlaylistState();
-            var info = _player.GetBasicTrackInfo(state.Item2);
-            if (info == null)
-                return;
-
-            SetBasicMetadata(info);
-        }
-
-        private delegate void SetBasicMetadataDelegate(BasicTrackInfo info);
-
         private void SetBasicMetadata(BasicTrackInfo info)
         {
-            if (TrackTitleLabel.InvokeRequired)
-            {
-                TrackArtistLabel.BeginInvoke(new SetBasicMetadataDelegate(SetBasicMetadata), info);
-                return;
-            }
             TrackTitleLabel.Text = info.TrackTitle;
             TrackArtistLabel.Text = info.TrackArtist;
             AlbumLabel.Text = info.Album;
             SetDuration(info.Duration);
-            UpdateTime();
+            UpdateTime(new Rational(0), false, false);
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -172,7 +154,7 @@ namespace cs_napalm
         private void SeekBar_Scroll(object sender, EventArgs e)
         {
             if (SeekBar.Maximum > 0)
-                UpdateTime(new Rational(SeekBar.Value, SeekBar.Maximum));
+                UpdateTime(new Rational(SeekBar.Value, SeekBar.Maximum), true, false);
         }
 
         private void SeekBar_MouseDown(object sender, MouseEventArgs e)
@@ -180,23 +162,44 @@ namespace cs_napalm
             DraggingSeekbar = true;
         }
 
-        private delegate void OnSeekCompleteDelegate();
-
-        private void OnSeekComplete()
-        {
-            if (TrackTitleLabel.InvokeRequired)
-            {
-                TrackArtistLabel.BeginInvoke(new OnSeekCompleteDelegate(OnSeekComplete));
-                return;
-            }
-            DraggingSeekbar = false;
-            UpdateTime();
-        }
-
         private void SeekBar_MouseUp(object sender, MouseEventArgs e)
         {
             InitPlayer();
             _player.Seek(_currentDuration * new Rational(SeekBar.Value, SeekBar.Maximum));
         }
+
+        #region Player Callbacks
+
+        private void OnTrackChanged()
+        {
+            if (this.FromMainThread(OnTrackChanged))
+                return;
+            var state = _player.GetPlaylistState();
+            var info = _player.GetBasicTrackInfo(state.Position);
+            if (info != null)
+                SetBasicMetadata(info);
+            var cover = _player.GetFrontCover(state.Position);
+            if (cover != null)
+            {
+                using (var mem = new MemoryStream(cover))
+                {
+                    var bmp = new Bitmap(mem);
+                    ArtCoverLabel.Image = new Bitmap(bmp, new Size(ArtCoverLabel.Width, ArtCoverLabel.Height));
+                }
+            }
+        }
+
+        private void OnSeekComplete()
+        {
+            if (this.FromMainThread(OnSeekComplete))
+                return;
+            if (!DraggingSeekbar)
+                return;
+            DraggingSeekbar = false;
+            UpdateTime(new Rational(-1), false, false);
+        }
+
+        #endregion
+
     }
 }

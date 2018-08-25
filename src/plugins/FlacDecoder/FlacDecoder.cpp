@@ -66,14 +66,23 @@ FlacDecoder::FlacDecoder(const char *path, const SlicedIO &io, Module *module):
 	if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		throw std::runtime_error((std::string)"FLAC initialization failed: " + to_string(status));
 	auto status2 = this->process_until_end_of_metadata();
-	if (!this->parse_cuesheet() && !this->native_cuesheet){
-		StreamRange sr;
-		sr.time_begin = 0;
-		sr.sample_begin = 0;
-		sr.frequency = this->format->freq;
-		sr.sample_length = this->get_pcm_length_internal();
-		sr.time_length = rational_t(sr.sample_length, this->format->freq);
-		this->stream_ranges.push_back(sr);
+	if (!this->parse_cuesheet()){
+		if (this->native_cuesheet){
+			auto f = this->format->freq;
+			for (auto &sr : this->stream_ranges){
+				sr.time_begin /= f;
+				sr.time_length /= f;
+				sr.frequency = f;
+			}
+		}else{
+			StreamRange sr;
+			sr.time_begin = 0;
+			sr.sample_begin = 0;
+			sr.frequency = this->format->freq;
+			sr.sample_length = this->get_pcm_length_internal();
+			sr.time_length = rational_t(sr.sample_length, this->format->freq);
+			this->stream_ranges.push_back(sr);
+		}
 	}
 }
 
@@ -172,7 +181,7 @@ UniqueFlacAudioBuffer FlacDecoder::read_more_internal(){
 }
 
 std::uint64_t FlacDecoder::get_pcm_length_internal(){
-	return this->get_total_samples();
+	return this->sample_length == length_unset ? std::numeric_limits<std::uint64_t>::max() : this->sample_length;
 }
 
 rational_t FlacDecoder::get_seconds_length_internal(){
@@ -268,6 +277,7 @@ void FlacDecoder::read_stream_info(const FLAC__StreamMetadata_StreamInfo &stream
 	format.freq = stream_info.sample_rate;
 	this->format = format;
 	this->time_resolution = this->format->freq;
+	this->sample_length = stream_info.total_samples;
 }
 
 void FlacDecoder::read_cuesheet(const FLAC__StreamMetadata_CueSheet &cuesheet){
@@ -307,12 +317,44 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata *metadata){
 	}
 }
 
-void process_cdtext(OggMetadata &metadata, Cdtext *cdtext){
+#define COPY_CDTEXT(pti, meta) \
+	auto meta = cdtext_get(pti, cdtext); \
+	if (meta) \
+		metadata.add(OggMetadata::meta, meta)
+
+#define COPY_REM(meta) \
+	auto meta = rem_get(REM_##meta, rem); \
+	if (meta) \
+		metadata.add(OggMetadata::meta, meta)
+
+void process_cdtext_common(OggMetadata &metadata, Cdtext *cdtext){
+	COPY_CDTEXT(PTI_PERFORMER, ARTIST);
+	COPY_CDTEXT(PTI_COMPOSER, COMPOSER);
+	COPY_CDTEXT(PTI_DISC_ID, DISCID);
+}
+
+void process_cdtext_album(OggMetadata &metadata, Cdtext *cdtext){
 	if (!cdtext)
 		return;
-	auto artist = cdtext_get(PTI_PERFORMER, cdtext);
-	if (artist)
-		metadata.add(OggMetadata::ARTIST, artist);
+	process_cdtext_common(metadata, cdtext);
+	COPY_CDTEXT(PTI_TITLE, ALBUM);
+}
+
+void process_cdtext_track(OggMetadata &metadata, Cdtext *cdtext){
+	if (!cdtext)
+		return;
+	process_cdtext_common(metadata, cdtext);
+	COPY_CDTEXT(PTI_TITLE, TITLE);
+}
+
+void process_rem(OggMetadata &metadata, Rem *rem){
+	if (!rem)
+		return;
+	COPY_REM(DATE);
+	COPY_REM(REPLAYGAIN_ALBUM_GAIN);
+	COPY_REM(REPLAYGAIN_ALBUM_PEAK);
+	COPY_REM(REPLAYGAIN_TRACK_GAIN);
+	COPY_REM(REPLAYGAIN_TRACK_PEAK);
 }
 
 bool FlacDecoder::parse_cuesheet(){
@@ -351,26 +393,17 @@ bool FlacDecoder::parse_cuesheet(){
 		}
 	}
 
-	process_cdtext(this->metadata, cd_get_cdtext(cd.get()));
+	process_rem(this->metadata, cd_get_rem(cd.get()));
+	process_cdtext_album(this->metadata, cd_get_cdtext(cd.get()));
 
 	for (int i = 0; i < stream_count; i++){
 		auto track = cd_get_track(cd.get(), i + 1);
 		if (!track)
 			continue;
-		OggMetadata metadata;
-		process_cdtext(metadata, track_get_cdtext(track));
-		
-		auto rem = track_get_rem(track);
-		if (rem){
-			auto gain = rem_get(REM_REPLAYGAIN_TRACK_GAIN, rem);
-			if (gain){
-				metadata.add(OggMetadata::REPLAYGAIN_ALBUM_GAIN, gain);
-			}
-			auto peak = rem_get(REM_REPLAYGAIN_TRACK_PEAK, rem);
-			if (peak){
-				metadata.add(OggMetadata::REPLAYGAIN_ALBUM_PEAK, peak);
-			}
-		}
+		OggMetadata metadata = this->metadata;
+		process_cdtext_track(metadata, track_get_cdtext(track));
+		process_rem(metadata, track_get_rem(track));
+		this->track_metadata.emplace_back(std::move(metadata));
 	}
 
 	return true;
@@ -413,7 +446,15 @@ DecoderSubstream *FlacDecoder::get_substream(int index){
 	if (index < 0 || index >= this->stream_ranges.size())
 		return nullptr;
 	auto &sr = this->stream_ranges[index];
-	return new FlacDecoderSubstream(*this, index, sr.sample_begin, sr.sample_length, sr.time_begin, sr.time_length);
+	return new FlacDecoderSubstream(
+		*this,
+		index,
+		this->track_metadata.size() > index ? this->track_metadata[index] : this->metadata,
+		sr.sample_begin,
+		sr.sample_length,
+		sr.time_begin,
+		sr.time_length
+	);
 }
 
 AudioBuffer *FlacDecoder::internal_read(const AudioFormat &format, size_t extra_data, int substream_index){
@@ -438,11 +479,13 @@ AudioBuffer *FlacDecoder::internal_read(const AudioFormat &format, size_t extra_
 FlacDecoderSubstream::FlacDecoderSubstream(
 		FlacDecoder &parent,
 		int index,
+		const OggMetadata &metadata,
 		std::int64_t first_sample,
 		std::int64_t length,
 		const rational_t &first_moment,
 		const rational_t &seconds_length):
 			AbstractFlacDecoderSubstream(parent, index, first_sample, length, first_moment, seconds_length),
-			flac_parent(parent){
+			flac_parent(parent),
+			metadata(metadata){
 	this->format = this->flac_parent.get_format();
 }

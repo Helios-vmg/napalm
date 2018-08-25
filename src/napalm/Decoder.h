@@ -24,6 +24,7 @@ struct BufferExtraData{
 	size_t sample_offset;
 	std::uint64_t stream_id;
 	std::uint64_t flags;
+	unsigned buffer_no;
 };
 
 class MetadataModule;

@@ -14,12 +14,14 @@ public:
 	static std::string ALBUM,
 		TITLE,
 		ARTIST,
+		COMPOSER,
 		TRACKNUMBER,
 		DATE,
 		OPUS,
 		PART,
 		METADATA_BLOCK_PICTURE,
 		CUESHEET,
+		DISCID,
 		REPLAYGAIN_TRACK_GAIN,
 		REPLAYGAIN_TRACK_PEAK,
 		REPLAYGAIN_ALBUM_GAIN,
@@ -27,8 +29,8 @@ public:
 
 	OggMetadata() = default;
 	OggMetadata(const OggMetadata &) = default;
-	OggMetadata(OggMetadata &&other) = delete;
-	const OggMetadata &operator=(OggMetadata &&other) = delete;
+	OggMetadata(OggMetadata &&other) = default;
+	OggMetadata &operator=(OggMetadata &&other) = default;
 	void add_vorbis_comment(const void *, size_t);
 	template <typename F>
 	void iterate(F &f){

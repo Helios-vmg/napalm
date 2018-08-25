@@ -4,6 +4,7 @@
 
 std::string OggMetadata::ALBUM                  = "ALBUM";
 std::string OggMetadata::ARTIST                 = "ARTIST";
+std::string OggMetadata::COMPOSER               = "COMPOSER";
 std::string OggMetadata::DATE                   = "DATE";
 std::string OggMetadata::METADATA_BLOCK_PICTURE = "METADATA_BLOCK_PICTURE";
 std::string OggMetadata::OPUS                   = "OPUS";
@@ -11,6 +12,7 @@ std::string OggMetadata::PART                   = "PART";
 std::string OggMetadata::TITLE                  = "TITLE";
 std::string OggMetadata::TRACKNUMBER            = "TRACKNUMBER";
 std::string OggMetadata::CUESHEET               = "CUESHEET";
+std::string OggMetadata::DISCID                 = "DISCID";
 std::string OggMetadata::REPLAYGAIN_TRACK_GAIN  = "REPLAYGAIN_TRACK_GAIN";
 std::string OggMetadata::REPLAYGAIN_TRACK_PEAK  = "REPLAYGAIN_TRACK_PEAK";
 std::string OggMetadata::REPLAYGAIN_ALBUM_GAIN  = "REPLAYGAIN_ALBUM_GAIN";

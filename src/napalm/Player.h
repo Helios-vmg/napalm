@@ -40,7 +40,7 @@ class Player{
 	AudioFormat final_format;
 	AudioQueue queue;
 	mutex_wrapper<std::recursive_mutex> internal_mutex;
-	mutex_wrapper<std::mutex> external_mutex;
+	mutex_wrapper<std::recursive_mutex> external_mutex;
 	std::atomic<Status> status = Status::Stopped;
 	Playlist playlist;
 	std::thread decoding_thread;
@@ -71,4 +71,6 @@ public:
 	void get_playlist_state(size_t &size, size_t &position);
 	BasicTrackInfo get_basic_track_info(size_t playlist_position);
 	void seek(const rational_t &);
+	void *get_front_cover(size_t playlist_position, size_t &size);
+	void release_front_cover(void *);
 };

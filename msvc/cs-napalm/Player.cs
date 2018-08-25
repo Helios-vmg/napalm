@@ -91,6 +91,12 @@ namespace cs_napalm
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern void seek_to_time(IntPtr player, RationalStruct time);
 
+        [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr get_front_cover(IntPtr player, int playlist_position, ref int data_size);
+
+        [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void release_front_cover(IntPtr player, IntPtr buffer);
+
         private IntPtr _player;
 
         public Player()
@@ -194,11 +200,21 @@ namespace cs_napalm
                 GCHandle.FromIntPtr(p).Free();
         }
 
-        public Tuple<int, int> GetPlaylistState()
+        public struct PlaylistState
+        {
+            public int Size;
+            public int Position;
+        }
+
+        public PlaylistState GetPlaylistState()
         {
             int size, position;
             get_playlist_state(_player, out size, out position);
-            return new Tuple<int, int>(size, position);
+            return new PlaylistState
+            {
+                Size = size,
+                Position = position,
+            };
         }
 
         private static string Utf8ToString(IntPtr ptr)
@@ -250,6 +266,24 @@ namespace cs_napalm
                 denominator = time.Denominator,
             };
             seek_to_time(_player, rs);
+        }
+
+        public byte[] GetFrontCover(int position)
+        {
+            int size = 0;
+            var buffer = get_front_cover(_player, position, ref size);
+            if (buffer == IntPtr.Zero)
+                return null;
+            try
+            {
+                var ret = new byte[size];
+                Marshal.Copy(buffer, ret, 0, size);
+                return ret;
+            }
+            finally
+            {
+                release_front_cover(_player, buffer);
+            }
         }
     }
 }
