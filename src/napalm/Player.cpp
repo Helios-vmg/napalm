@@ -73,6 +73,10 @@ void Player::play(){
 
 void Player::seek(const rational_t &time){
 	LOCK_MUTEX2(this->external_mutex, "Player::seek()");
+	if (!this->now_playing){
+		this->notification_queue.push(NotificationType::SeekComplete);
+		return;
+	}
 	auto &substream = this->now_playing->get_first_source();
 	if (substream.seek_to_second(time, false) < 0){
 		this->notification_queue.push(NotificationType::SeekComplete);

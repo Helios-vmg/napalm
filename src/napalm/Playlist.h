@@ -56,10 +56,14 @@ public:
 		return this->tracks[i];
 	}
 	void next_track(){
+		if (!this->tracks.size())
+			return;
 		this->current_index++;
 		this->current_index %= this->tracks.size();
 	}
 	void previous_track(){
+		if (!this->tracks.size())
+			return;
 		this->current_index += this->tracks.size() - 1;
 		this->current_index %= this->tracks.size();
 	}

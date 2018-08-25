@@ -30,3 +30,4 @@ TemporaryGeneratedFile_*.cs
 !icons/*
 !cs-napalm/buttons/*
 *.ilk
+*.gz

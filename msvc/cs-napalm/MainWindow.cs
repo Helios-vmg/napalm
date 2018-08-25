@@ -198,6 +198,11 @@ namespace cs_napalm
         private void SeekBar_MouseUp(object sender, MouseEventArgs e)
         {
             InitPlayer();
+            if (SeekBar.Maximum == 0)
+            {
+                DraggingSeekbar = false;
+                return;
+            }
             _player.Seek(_currentDuration*new Rational(SeekBar.Value, SeekBar.Maximum));
         }
 
