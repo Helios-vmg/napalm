@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <boost/integer.hpp>
 #include <libcue.h>
+#include <sstream>
+#include <iomanip>
 
 static const int cue_divisions_per_second = 75;
 
@@ -66,7 +68,20 @@ FlacDecoder::FlacDecoder(const char *path, const SlicedIO &io, Module *module):
 	if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		throw std::runtime_error((std::string)"FLAC initialization failed: " + to_string(status));
 	auto status2 = this->process_until_end_of_metadata();
-	if (!this->parse_cuesheet()){
+	if (this->parse_cuesheet()){
+		for (int i = 0; i < this->stream_ranges.size(); i++){
+			std::stringstream stream;
+			stream << "CUE_TRACK" << std::setw(2) << std::setfill('0') << i + 1 << "_";
+			auto start = stream.str();
+			auto copy = this->metadata;
+			this->metadata.iterate([&start, &copy](const std::string &key, const std::string &value){
+				if (key.substr(0, start.size()) != start)
+					return;
+				copy.add(key.substr(start.size()), value);
+			});
+			this->track_metadata.emplace_back(std::move(copy));
+		}
+	}else{
 		if (this->native_cuesheet){
 			auto f = this->format->freq;
 			for (auto &sr : this->stream_ranges){
