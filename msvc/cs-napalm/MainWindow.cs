@@ -21,12 +21,27 @@ namespace cs_napalm
         {
             InitializeComponent();
 
-            DefaultCover = new Bitmap(Resources.napalm_icon, new Size(ArtCoverLabel.Width, ArtCoverLabel.Height));
+            DefaultCover = ResizeBitmap(Resources.napalm_icon, ArtCoverLabel.Size);
             DisplayDefaultCover();
 
             _timer.Interval = HighPrecisionTime ? 10 : 250;
             _timer.Tick += (sender, args) => OnTick();
             _timer.Enabled = true;
+        }
+
+        public static Bitmap ResizeBitmap(Bitmap src, Size dstSize)
+        {
+            var srcSize = src.Size;
+            if (dstSize == srcSize)
+                return src;
+
+            var srcRatio = new Rational(srcSize.Width, srcSize.Height);
+            var dstRatio = new Rational(dstSize.Width, dstSize.Height);
+            if (srcRatio < dstRatio)
+                dstSize = new Size(src.Width * dstSize.Height / src.Height, dstSize.Height);
+            else if (srcRatio > dstRatio)
+                dstSize = new Size(dstSize.Width, src.Height * dstSize.Width / src.Width);
+            return new Bitmap(src, dstSize);
         }
 
         public void DisplayDefaultCover()
@@ -202,7 +217,7 @@ namespace cs_napalm
                 using (var mem = new MemoryStream(cover))
                 {
                     var bmp = new Bitmap(mem);
-                    ArtCoverLabel.Image = new Bitmap(bmp, new Size(ArtCoverLabel.Width, ArtCoverLabel.Height));
+                    ArtCoverLabel.Image = ResizeBitmap(bmp, ArtCoverLabel.Size);
                 }
             }
         }
