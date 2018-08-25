@@ -511,7 +511,7 @@
             this.MainMenuStrip = this.menuStrip1;
             this.MinimumSize = new System.Drawing.Size(787, 581);
             this.Name = "MainWindow";
-            this.Text = "Form1";
+            this.Text = "Napalm";
             this.tableLayoutPanel3.ResumeLayout(false);
             this.tableLayoutPanel3.PerformLayout();
             this.tableLayoutPanel1.ResumeLayout(false);
