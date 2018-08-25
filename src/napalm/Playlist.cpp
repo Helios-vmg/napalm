@@ -1,9 +1,12 @@
 #include "Playlist.h"
 
-void Playlist::add(const std::shared_ptr<Decoder> &decoder){
+std::pair<size_t, size_t> Playlist::add(const std::shared_ptr<Decoder> &decoder){
 	auto tracks = decoder->get_substreams_count();
+	auto begin = this->tracks.size();
 	for (int i = 0; i < tracks; i++)
 		this->tracks.emplace_back(*decoder, i);
+	auto end = begin + tracks;
+	return {begin, end};
 }
 
 Track::Track(Decoder &decoder, int subtrack){

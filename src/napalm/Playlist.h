@@ -45,7 +45,7 @@ class Playlist{
 	std::vector<Track> tracks;
 	size_t current_index = 0;
 public:
-	void add(const std::shared_ptr<Decoder> &);
+	std::pair<size_t, size_t> add(const std::shared_ptr<Decoder> &);
 	size_t get_current_index() const{
 		return this->current_index;
 	}
@@ -54,6 +54,11 @@ public:
 	}
 	const Track &operator[](size_t i) const{
 		return this->tracks[i];
+	}
+	void clear(){
+		this->current_decoder.reset();
+		this->tracks.clear();
+		this->current_index = 0;
 	}
 	void next_track(){
 		if (!this->tracks.size())

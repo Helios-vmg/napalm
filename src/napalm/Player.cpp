@@ -26,7 +26,14 @@ void Player::load_file(const char *path){
 	auto decoder = this->internal_load(path);
 	if (!decoder)
 		throw std::runtime_error("Load failed.");
-	this->playlist.add(decoder);
+	this->stop();
+	this->playlist.clear();
+	auto update_range = this->playlist.add(decoder);
+	Notification notification(NotificationType::PlaylistUpdated);
+	notification.param2 = update_range.first;
+	notification.param3 = update_range.second;
+	this->notification_queue.push(std::move(notification));
+	this->play();
 }
 
 std::shared_ptr<Decoder> Player::internal_load(const std::string &path){
@@ -309,28 +316,17 @@ void Player::decoding_function(){
 }
 
 #define CALL_BACK(x) \
-	{ \
-		LOCK_MUTEX(this->callbacks_mutex, "Player::async_notifications_function()"); \
-		if (this->callbacks.on_notification) \
-			this->callbacks.on_notification(this->callbacks.cb_data, &notification); \
-	}
+	
 
 void Player::async_notifications_function(){
-	bool stop = false;
-	while (!stop){
+	while (true){
 		auto notification = this->notification_queue.pop();
-		switch (notification.type){
-			case NotificationType::Destructing:
-				stop = true;
-				break;
-			case NotificationType::TrackChanged:
-				CALL_BACK(on_track_changed);
-				break;
-			case NotificationType::SeekComplete:
-				CALL_BACK(on_seek_complete);
-				break;
-			default:
-				break;
+		if (notification.type == NotificationType::Destructing)
+			break;
+		{
+			LOCK_MUTEX(this->callbacks_mutex, "Player::async_notifications_function()");
+			if (this->callbacks.on_notification)
+				this->callbacks.on_notification(this->callbacks.cb_data, &notification);
 		}
 	}
 }

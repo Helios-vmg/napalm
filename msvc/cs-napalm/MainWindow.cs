@@ -54,74 +54,12 @@ namespace cs_napalm
             _player?.Dispose();
         }
 
-        private void LoadButton_Click(object sender, EventArgs e)
-        {
-            var d = new OpenFileDialog();
-            var result = d.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                InitPlayer();
-                _player.LoadFile(d.FileName);
-            }
-        }
-
         void InitPlayer()
         {
             if (_player != null)
                 return;
             _player = new Player();
             _player.SetCallbacks(OnPlayerNotification);
-        }
-
-        private void OnPlayerNotification(Player.Notification notification)
-        {
-            switch (notification.Type)
-            {
-                case Player.NotificationType.Nothing:
-                case Player.NotificationType.Destructing:
-                    break;
-                case Player.NotificationType.TrackChanged:
-                    OnTrackChanged();
-                    break;
-                case Player.NotificationType.SeekComplete:
-                    OnSeekComplete();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        private void PlayButton_Click(object sender, EventArgs e)
-        {
-            InitPlayer();
-            _player.Play();
-        }
-
-        private void PauseButton_Click(object sender, EventArgs e)
-        {
-            InitPlayer();
-            _player.Pause();
-        }
-
-        private void StopButton_Click(object sender, EventArgs e)
-        {
-            InitPlayer();
-            _player.Stop();
-            SetDuration(new Rational(0));
-            UpdateTime(new Rational(0), false, false);
-            DisplayDefaultCover();
-        }
-
-        private void PreviousTrackButton_Click(object sender, EventArgs e)
-        {
-            InitPlayer();
-            _player.PreviousTrack();
-        }
-
-        private void NextTrackButton_Click(object sender, EventArgs e)
-        {
-            InitPlayer();
-            _player.NextTrack();
         }
 
         private void OnTick()
@@ -178,65 +116,5 @@ namespace cs_napalm
             SetDuration(info.Duration);
             UpdateTime(new Rational(0), false, false);
         }
-
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Close();
-        }
-
-        private void SeekBar_Scroll(object sender, EventArgs e)
-        {
-            if (SeekBar.Maximum > 0)
-                UpdateTime(new Rational(SeekBar.Value, SeekBar.Maximum), true, false);
-        }
-
-        private void SeekBar_MouseDown(object sender, MouseEventArgs e)
-        {
-            DraggingSeekbar = true;
-        }
-
-        private void SeekBar_MouseUp(object sender, MouseEventArgs e)
-        {
-            InitPlayer();
-            if (SeekBar.Maximum == 0)
-            {
-                DraggingSeekbar = false;
-                return;
-            }
-            _player.Seek(_currentDuration*new Rational(SeekBar.Value, SeekBar.Maximum));
-        }
-
-        #region Player Callbacks
-
-        private void OnTrackChanged()
-        {
-            if (this.FromMainThread(OnTrackChanged))
-                return;
-            var state = _player.GetPlaylistState();
-            var info = _player.GetBasicTrackInfo(state.Position);
-            if (info != null)
-                SetBasicMetadata(info);
-            var cover = _player.GetFrontCover(state.Position);
-            if (cover != null)
-            {
-                using (var mem = new MemoryStream(cover))
-                {
-                    var bmp = new Bitmap(mem);
-                    ArtCoverLabel.Image = ResizeBitmap(bmp, ArtCoverLabel.Size);
-                }
-            }
-        }
-
-        private void OnSeekComplete()
-        {
-            if (this.FromMainThread(OnSeekComplete))
-                return;
-            if (!DraggingSeekbar)
-                return;
-            DraggingSeekbar = false;
-            UpdateTime(new Rational(-1), false, false);
-        }
-
-        #endregion
     }
 }

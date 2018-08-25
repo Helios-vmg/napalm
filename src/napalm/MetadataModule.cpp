@@ -100,7 +100,7 @@ bool ExternalMetadataIterator::next(std::string &key, std::string &value){
 		try{
 			key.assign((const char *)kv.key.ptr, kv.key.size);
 			value.assign((const char *)kv.value.ptr, kv.value.size);
-		}catch (std::exception &e){
+		}catch (std::exception &){
 			this->module->metadata_release_buffer(kv.key);
 			this->module->metadata_release_buffer(kv.value);
 			throw;

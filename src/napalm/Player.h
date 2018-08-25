@@ -24,6 +24,7 @@ enum class NotificationType : std::int32_t{
 	Destructing,
 	TrackChanged,
 	SeekComplete,
+	PlaylistUpdated,
 };
 
 struct Notification{

@@ -20,8 +20,9 @@ namespace cs_napalm
             Destructing,
             TrackChanged,
             SeekComplete,
+            PlaylistUpdated,
         }
-        
+
         public delegate void OnNotification(Notification notification);
 
         public struct Notification
