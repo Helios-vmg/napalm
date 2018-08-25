@@ -44,9 +44,6 @@ typedef void (*substream_close_f)(DecoderSubstreamPtr);
 //substream_get_audio_format (required)
 typedef AudioFormat (*substream_get_audio_format_f)(DecoderSubstreamPtr);
 
-//substream_set_number_format_hint (optional)
-typedef void (*substream_set_number_format_hint_f)(DecoderSubstreamPtr, NumberFormat);
-
 //substream_read (required)
 typedef AudioBuffer *(*substream_read_f)(DecoderSubstreamPtr, size_t extra_data);
 

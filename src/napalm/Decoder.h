@@ -43,7 +43,6 @@ class DecoderModule{
 	DEFINE_FP(decoder_get_substream);
 	DEFINE_FP(substream_close);
 	DEFINE_FP(substream_get_audio_format);
-	DEFINE_FP(substream_set_number_format_hint);
 	DEFINE_FP(substream_read);
 	DEFINE_FP(substream_get_length_in_seconds);
 	DEFINE_FP(substream_get_length_in_samples);
@@ -90,7 +89,6 @@ class DecoderSubstream : public BufferSource{
 	DecoderSubstream(Decoder &decoder, int index, const std::shared_ptr<MetadataModule> &metadata_module);
 public:
 	AudioFormat get_audio_format();
-	void set_number_format_hint(NumberFormat);
 	audio_buffer_t read() override;
 	rational_t get_length_in_seconds();
 	std::uint64_t get_length_in_samples();

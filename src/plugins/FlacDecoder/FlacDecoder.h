@@ -98,7 +98,6 @@ public:
 	FlacDecoder &get_parent(){
 		return this->flac_parent;
 	}
-	void set_number_format_hint(NumberFormat nf){}
 	OggMetadataWrapper *get_metadata() override{
 		return new OggMetadataWrapper(this->flac_parent, this->metadata);
 	}

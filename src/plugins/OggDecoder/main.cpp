@@ -106,14 +106,6 @@ AudioFormat substream_get_audio_format(DecoderSubstreamPtr instance){
 	return ret;
 }
 
-void substream_set_number_format_hint(DecoderSubstreamPtr instance, NumberFormat nf){
-	auto &substream = *(OggDecoderSubstream *)instance;
-	try{
-		substream.set_number_format_hint(nf);
-	}catch (std::exception &){
-	}
-}
-
 static AudioBuffer *substream_read(DecoderSubstreamPtr instance, size_t extra_data){
 	auto &substream = *(OggDecoderSubstream *)instance;
 	auto &module = substream.get_parent().get_module();
@@ -199,7 +191,6 @@ EXPORT const ModuleExportEntry *GetFunctionTable(ModulePtr){
 		EXPORT_MODULE_FUNCTION(decoder_get_substream),
 		EXPORT_MODULE_FUNCTION(substream_close),
 		EXPORT_MODULE_FUNCTION(substream_get_audio_format),
-		EXPORT_MODULE_FUNCTION(substream_set_number_format_hint),
 		EXPORT_MODULE_FUNCTION(substream_read),
 		EXPORT_MODULE_FUNCTION(substream_get_length_in_seconds),
 		EXPORT_MODULE_FUNCTION(substream_get_length_in_samples),

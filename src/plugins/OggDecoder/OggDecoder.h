@@ -62,7 +62,6 @@ public:
 	OggDecoder &get_parent(){
 		return this->ogg_parent;
 	}
-	void set_number_format_hint(NumberFormat nf);
 	OggMetadataWrapper *get_metadata(){
 		return new OggMetadataWrapper(this->ogg_parent, this->metadata);
 	}

@@ -209,7 +209,6 @@ public:
 	virtual AudioFormat get_audio_format(){
 		return this->format;
 	}
-	virtual void set_number_format_hint(NumberFormat nf){}
 	virtual Decoder &get_parent(){
 		return this->parent;
 	}

@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <boost/integer.hpp>
 
-static const NumberFormat number_format = IntS16;
+static const NumberFormat number_format = Float32;
 
 static const char *ogg_code_to_string(int e){
 	switch (e){
@@ -96,34 +96,13 @@ OggDecoderSubstream::OggDecoderSubstream(
 		stream << "Failed to read Ogg Vorbis stream info for stream index " << this->index;
 		throw std::runtime_error(stream.str());
 	}
-	this->format.format = Float32;
+	this->format.format = number_format;
 	this->format.channels = info->channels;
 	this->format.freq = info->rate;
 	vorbis_comment *comment = ov_comment(ogg_file, this->index);
 	if (comment){
 		for (auto i = comment->comments; i--;)
 			this->metadata.add_vorbis_comment(comment->user_comments[i], comment->comment_lengths[i]);
-	}
-}
-
-void OggDecoderSubstream::set_number_format_hint(NumberFormat nf){
-	switch (nf){
-		case IntU8:
-		case IntU16:
-		case IntU24:
-		case IntU32:
-		case IntS8:
-		case IntS16:
-		case IntS24:
-		case IntS32:
-			this->format.format = nf;
-			break;
-		case Float32:
-		case Float64:
-			this->format.format = Float32;
-			break;
-		default:
-			break;
 	}
 }
 
@@ -164,31 +143,21 @@ std::unique_ptr<OggAudioBuffer, void (*)(OggAudioBuffer *)> alloc(size_t extra_s
 
 int OggDecoder::ov_read(const AudioFormat &af, std::uint8_t *dst, size_t size, size_t &samples, int substream_index){
 	int substream;
-	if (af.format == Float32){
-		float **temp;
-		int ret = ::ov_read_float(&this->ogg_file, &temp, (int)samples, &substream);
-		if (ret <= 0)
-			return ret;
-		if (substream != substream_index)
-			return 0;
-		auto rsamples = ret;
-		for (size_t c = 0; c < af.channels; c++){
-			auto fdst = (float *)dst + c;
-			auto fsrc = temp[c];
-			for (size_t s = 0; s < rsamples; s++, fdst += af.channels)
-				*fdst = fsrc[s];
-		}
-		samples -= rsamples;
-		return ret * sizeof(float) * af.channels;
-	}
-
-	int word = (af.format - 1) % 4 + 1,
-		signedness = af.format > IntU32;
-	int ret = ::ov_read(&this->ogg_file, (char *)dst, (int)size, false, word, signedness, &substream);
+	float **temp;
+	int ret = ::ov_read_float(&this->ogg_file, &temp, (int)samples, &substream);
 	if (ret <= 0)
 		return ret;
-	samples -= ret / word;
-	return ret;
+	if (substream != substream_index)
+		return 0;
+	auto rsamples = ret;
+	for (size_t c = 0; c < af.channels; c++){
+		auto fdst = (float *)dst + c;
+		auto fsrc = temp[c];
+		for (size_t s = 0; s < rsamples; s++, fdst += af.channels)
+			*fdst = fsrc[s];
+	}
+	samples -= rsamples;
+	return ret * sizeof(float) * af.channels;
 }
 
 AudioBuffer *OggDecoder::internal_read(const AudioFormat &af, size_t extra_data, int substream_index){
