@@ -13,18 +13,41 @@ namespace cs_napalm
         {
             public long numerator, denominator;
         }
-        
-        public delegate void OnTrackChanged();
-        public delegate void OnSeekComplete();
 
-        private delegate void OnTrackChangedPrivate(IntPtr data);
-        private delegate void OnSeekCompletePrivate(IntPtr data);
+        public enum NotificationType
+        {
+            Nothing = 0,
+            Destructing,
+            TrackChanged,
+            SeekComplete,
+        }
+        
+        public delegate void OnNotification(Notification notification);
+
+        public struct Notification
+        {
+            public NotificationType Type;
+            public int Param1;
+            public long Param2;
+            public long Param3;
+            public IntPtr Param4;
+        }
+
+        private struct PrivateNotification
+        {
+            public int type;
+            public int param1;
+            public long param2;
+            public long param3;
+            public IntPtr param4;
+        }
+
+        private delegate void OnNotificationPrivate(IntPtr data, ref PrivateNotification notification);
 
         private struct Callbacks
         {
             public IntPtr cb_data;
-            public OnTrackChangedPrivate on_track_changed;
-            public OnSeekCompletePrivate on_seek_complete;
+            public OnNotificationPrivate on_notification;
         }
         
         private struct NumericTrackInfo
@@ -113,8 +136,7 @@ namespace cs_napalm
                 destroy_player(_player);
                 _player = IntPtr.Zero;
             }
-            ReleaseHandle(ref _onTrackChangedHandle);
-            ReleaseHandle(ref _onSeekCompleteHandle);
+            ReleaseHandle(ref _onNotificationHandle);
         }
 
         public void ReleaseHandle(ref IntPtr handle)
@@ -167,31 +189,36 @@ namespace cs_napalm
             return ToRational(time);
         }
 
-        private OnTrackChangedPrivate _onTrackChanged;
-        private OnSeekCompletePrivate _onSeekComplete;
-        private IntPtr _onTrackChangedHandle;
-        private IntPtr _onSeekCompleteHandle;
+        private OnNotificationPrivate _onNotification;
+        private IntPtr _onNotificationHandle;
 
-        public void SetCallbacks(OnTrackChanged otc, OnSeekComplete osc)
+        private Notification ToNotification(PrivateNotification pn)
+        {
+            return new Notification
+            {
+                Type = (NotificationType)pn.type,
+                Param1 = pn.param1,
+                Param2 = pn.param2,
+                Param3 = pn.param3,
+                Param4 = pn.param4,
+            };
+        }
+
+        public void SetCallbacks(OnNotification on)
         {
             Callbacks callbacks;
             callbacks.cb_data = IntPtr.Zero;
 
-            var oldOnTrackChangedHandle = _onTrackChangedHandle;
-            var oldOnSeekCompleteHandle = _onSeekCompleteHandle;
+            var oldOnNotificationHandle = _onNotificationHandle;
 
-            _onTrackChanged = data => otc();
-            _onTrackChangedHandle = GCHandle.ToIntPtr(GCHandle.Alloc(_onTrackChanged));
-            callbacks.on_track_changed = _onTrackChanged;
+            _onNotification = (IntPtr data, ref PrivateNotification notification) => on(ToNotification(notification));
 
-            _onSeekComplete = data => osc();
-            _onSeekCompleteHandle = GCHandle.ToIntPtr(GCHandle.Alloc(_onSeekComplete));
-            callbacks.on_seek_complete = _onSeekComplete;
+            _onNotificationHandle = GCHandle.ToIntPtr(GCHandle.Alloc(_onNotification));
+            callbacks.on_notification = _onNotification;
 
             set_callbacks(_player, ref callbacks);
 
-            ReleaseGcHandle(oldOnTrackChangedHandle);
-            ReleaseGcHandle(oldOnSeekCompleteHandle);
+            ReleaseGcHandle(oldOnNotificationHandle);
         }
 
         private static void ReleaseGcHandle(IntPtr p)

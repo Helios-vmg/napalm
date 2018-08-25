@@ -16,7 +16,7 @@ Player::Player(): queue(this->final_format), notification_queue(1024){
 
 Player::~Player(){
 	this->stop();
-	this->notification_queue.push(Notification::Destructing);
+	this->notification_queue.push(NotificationType::Destructing);
 	this->async_notifications_thread.join();
 }
 
@@ -75,7 +75,7 @@ void Player::seek(const rational_t &time){
 	LOCK_MUTEX2(this->external_mutex, "Player::seek()");
 	auto &substream = this->now_playing->get_first_source();
 	if (substream.seek_to_second(time, false) < 0){
-		this->notification_queue.push(Notification::SeekComplete);
+		this->notification_queue.push(NotificationType::SeekComplete);
 		return;
 	}
 
@@ -307,22 +307,22 @@ void Player::decoding_function(){
 #define CALL_BACK(x) \
 	{ \
 		LOCK_MUTEX(this->callbacks_mutex, "Player::async_notifications_function()"); \
-		if (this->callbacks.x) \
-			this->callbacks.x(this->callbacks.cb_data); \
+		if (this->callbacks.on_notification) \
+			this->callbacks.on_notification(this->callbacks.cb_data, &notification); \
 	}
 
 void Player::async_notifications_function(){
 	bool stop = false;
 	while (!stop){
-		auto type = this->notification_queue.pop();
-		switch (type){
-			case Notification::Destructing:
+		auto notification = this->notification_queue.pop();
+		switch (notification.type){
+			case NotificationType::Destructing:
 				stop = true;
 				break;
-			case Notification::TrackChanged:
+			case NotificationType::TrackChanged:
 				CALL_BACK(on_track_changed);
 				break;
-			case Notification::SeekComplete:
+			case NotificationType::SeekComplete:
 				CALL_BACK(on_seek_complete);
 				break;
 			default:
@@ -374,9 +374,9 @@ void Player::open_output(){
 						LOCK_MUTEX2(this->internal_mutex, "Player::open_output()");
 						this->current_time = current_time;
 						if (flags&AudioQueueFlags_values::track_changed)
-							this->notification_queue.push(Notification::TrackChanged);
+							this->notification_queue.push(NotificationType::TrackChanged);
 						if (flags&AudioQueueFlags_values::seek_complete)
-							this->notification_queue.push(Notification::SeekComplete);
+							this->notification_queue.push(NotificationType::SeekComplete);
 
 						return ret;
 					},

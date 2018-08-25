@@ -55,7 +55,25 @@ namespace cs_napalm
             if (_player != null)
                 return;
             _player = new Player();
-            _player.SetCallbacks(OnTrackChanged, OnSeekComplete);
+            _player.SetCallbacks(OnPlayerNotification);
+        }
+
+        private void OnPlayerNotification(Player.Notification notification)
+        {
+            switch (notification.Type)
+            {
+                case Player.NotificationType.Nothing:
+                case Player.NotificationType.Destructing:
+                    break;
+                case Player.NotificationType.TrackChanged:
+                    OnTrackChanged();
+                    break;
+                case Player.NotificationType.SeekComplete:
+                    OnSeekComplete();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         private void PlayButton_Click(object sender, EventArgs e)
@@ -165,7 +183,7 @@ namespace cs_napalm
         private void SeekBar_MouseUp(object sender, MouseEventArgs e)
         {
             InitPlayer();
-            _player.Seek(_currentDuration * new Rational(SeekBar.Value, SeekBar.Maximum));
+            _player.Seek(_currentDuration*new Rational(SeekBar.Value, SeekBar.Maximum));
         }
 
         #region Player Callbacks
@@ -200,6 +218,5 @@ namespace cs_napalm
         }
 
         #endregion
-
     }
 }

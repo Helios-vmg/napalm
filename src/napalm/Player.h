@@ -19,19 +19,39 @@ enum class Status{
 	Paused,
 };
 
+enum class NotificationType : std::int32_t{
+	Nothing = 0,
+	Destructing,
+	TrackChanged,
+	SeekComplete,
+};
+
+struct Notification{
+	NotificationType type;
+	std::int32_t param1;
+	std::int64_t param2;
+	std::int64_t param3;
+	void *param4;
+	Notification():
+		type(NotificationType::Nothing),
+		param1(0),
+		param2(0),
+		param3(0),
+		param4(nullptr){}
+	Notification(NotificationType type):
+		type(type),
+		param1(0),
+		param2(0),
+		param3(0),
+		param4(nullptr){}
+};
+
 struct Callbacks{
 	void *cb_data = nullptr;
-	void (*on_track_changed)(void *cb_data) = nullptr;
-	void (*on_seek_complete)(void *cb_data) = nullptr;
+	void (*on_notification)(void *, const Notification *) = nullptr;
 };
 
 class Player{
-	enum class Notification : std::uint8_t{
-		Destructing,
-		TrackChanged,
-		SeekComplete,
-	};
-
 	std::vector<std::unique_ptr<DecoderModule>> decoders;
 	std::vector<std::unique_ptr<OutputModule>> outputs;
 	std::unique_ptr<BufferSource> now_playing;
