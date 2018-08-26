@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace cs_napalm
 {
-    class Player : IDisposable
+    public class Player : IDisposable
     {
         private struct RationalStruct
         {
@@ -73,6 +73,63 @@ namespace cs_napalm
             public NumericTrackInfo numeric_track_info;
         }
 
+        private delegate void ReleaseFunction(IntPtr p);
+
+        private struct OutputDeviceList
+        {
+            public IntPtr opaque;
+            public ReleaseFunction release_function;
+            public UIntPtr length;
+            public IntPtr items;
+        }
+
+        private struct PrivateOutputDevice
+        {
+            public IntPtr name;
+            public byte unique_id_00;
+            public byte unique_id_01;
+            public byte unique_id_02;
+            public byte unique_id_03;
+            public byte unique_id_04;
+            public byte unique_id_05;
+            public byte unique_id_06;
+            public byte unique_id_07;
+            public byte unique_id_08;
+            public byte unique_id_09;
+            public byte unique_id_10;
+            public byte unique_id_11;
+            public byte unique_id_12;
+            public byte unique_id_13;
+            public byte unique_id_14;
+            public byte unique_id_15;
+            public byte unique_id_16;
+            public byte unique_id_17;
+            public byte unique_id_18;
+            public byte unique_id_19;
+            public byte unique_id_20;
+            public byte unique_id_21;
+            public byte unique_id_22;
+            public byte unique_id_23;
+            public byte unique_id_24;
+            public byte unique_id_25;
+            public byte unique_id_26;
+            public byte unique_id_27;
+            public byte unique_id_28;
+            public byte unique_id_29;
+            public byte unique_id_30;
+            public byte unique_id_31;
+        }
+
+        public class OutputDevice
+        {
+            public string Name;
+            public byte[] UniqueId;
+            public override string ToString()
+            {
+                return Name;
+            }
+        }
+
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr create_player();
 
@@ -120,6 +177,15 @@ namespace cs_napalm
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern void release_front_cover(IntPtr player, IntPtr buffer);
+
+        [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void get_outputs(IntPtr player, ref OutputDeviceList dst);
+
+        [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void get_selected_output(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] dst);
+
+        [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void select_output(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] dst);
 
         private IntPtr _player;
 
@@ -312,6 +378,80 @@ namespace cs_napalm
             {
                 release_front_cover(_player, buffer);
             }
+        }
+
+        public List<OutputDevice> GetOutputs()
+        {
+            var ret = new List<OutputDevice>();
+            var outputs = new OutputDeviceList();
+            get_outputs(_player, ref outputs);
+            if (outputs.release_function == null)
+                return ret;
+            try
+            {
+                if (outputs.length.ToUInt64() > (ulong)int.MaxValue)
+                    throw new Exception("Too many outputs.");
+                var n = (int)outputs.length;
+                for (int i = 0; i < n; i++)
+                {
+                    var pod = Marshal.PtrToStructure<PrivateOutputDevice>(outputs.items + i * Marshal.SizeOf(typeof(PrivateOutputDevice)));
+                    var id = new byte[32];
+                    id[0] = pod.unique_id_00;
+                    id[1] = pod.unique_id_01;
+                    id[2] = pod.unique_id_02;
+                    id[3] = pod.unique_id_03;
+                    id[4] = pod.unique_id_04;
+                    id[5] = pod.unique_id_05;
+                    id[6] = pod.unique_id_06;
+                    id[7] = pod.unique_id_07;
+                    id[8] = pod.unique_id_08;
+                    id[9] = pod.unique_id_09;
+                    id[10] = pod.unique_id_10;
+                    id[11] = pod.unique_id_11;
+                    id[12] = pod.unique_id_12;
+                    id[13] = pod.unique_id_13;
+                    id[14] = pod.unique_id_14;
+                    id[15] = pod.unique_id_15;
+                    id[16] = pod.unique_id_16;
+                    id[17] = pod.unique_id_17;
+                    id[18] = pod.unique_id_18;
+                    id[19] = pod.unique_id_19;
+                    id[20] = pod.unique_id_20;
+                    id[21] = pod.unique_id_21;
+                    id[22] = pod.unique_id_22;
+                    id[23] = pod.unique_id_23;
+                    id[24] = pod.unique_id_24;
+                    id[25] = pod.unique_id_25;
+                    id[26] = pod.unique_id_26;
+                    id[27] = pod.unique_id_27;
+                    id[28] = pod.unique_id_28;
+                    id[29] = pod.unique_id_29;
+                    id[30] = pod.unique_id_30;
+                    id[31] = pod.unique_id_31;
+                    ret.Add(new OutputDevice
+                    {
+                        Name = Utf8ToString(pod.name),
+                        UniqueId = id,
+                    });
+                }
+                return ret;
+            }
+            finally
+            {
+                outputs.release_function(outputs.opaque);
+            }
+        }
+
+        public byte[] GetSelectedOutput()
+        {
+            var ret = new byte[32];
+            get_selected_output(_player, ret);
+            return ret;
+        }
+
+        public void SelectOutput(byte[] uniqueId)
+        {
+            select_output(_player, uniqueId);
         }
     }
 }

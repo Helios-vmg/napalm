@@ -116,5 +116,12 @@ namespace cs_napalm
             SetDuration(info.Duration);
             UpdateTime(new Rational(0), false, false);
         }
+
+        private void preferencesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            InitPlayer();
+            var dialog = new PreferencesDialog(_player);
+            dialog.ShowDialog(this);
+        }
     }
 }

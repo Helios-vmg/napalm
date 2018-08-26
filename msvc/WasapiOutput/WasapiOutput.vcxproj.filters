@@ -32,13 +32,13 @@
     <ClInclude Include="..\..\src\plugins\WasapiOutput\WasapiOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\common\output.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\common\utf8.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\common\sha256.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\common\output.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

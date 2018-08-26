@@ -7,6 +7,7 @@
 #include "Playlist.h"
 #include "CircularQueue.h"
 #include "BasicTrackInfo.h"
+#include "OutputDeviceList.h"
 #include <memory>
 #include <mutex>
 #include <cstdint>
@@ -56,7 +57,6 @@ class Player{
 	std::vector<std::unique_ptr<DecoderModule>> decoders;
 	std::vector<std::unique_ptr<OutputModule>> outputs;
 	std::unique_ptr<BufferSource> now_playing;
-	std::map<uniqueid_t, std::shared_ptr<OutputDevice>> devices;
 	std::shared_ptr<OutputDevice> output_device;
 	AudioFormat final_format;
 	AudioQueue queue;
@@ -94,4 +94,7 @@ public:
 	void seek(const rational_t &);
 	void *get_front_cover(size_t playlist_position, size_t &size);
 	void release_front_cover(void *);
+	OutputDeviceList get_outputs();
+	uniqueid_t get_selected_output();
+	void select_output(const uniqueid_t &dst);
 };

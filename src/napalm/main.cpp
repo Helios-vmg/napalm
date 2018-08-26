@@ -102,3 +102,16 @@ EXPORT void *get_front_cover(Player *player, std::int32_t playlist_position, std
 EXPORT void release_front_cover(Player *player, void *buffer){
 	player->release_front_cover(buffer);
 }
+
+EXPORT void get_outputs(Player *player, OutputDeviceList *dst){
+	*dst = player->get_outputs();
+}
+
+EXPORT void get_selected_output(Player *player, std::uint8_t *dst){
+	auto output = player->get_selected_output();
+	memcpy(dst, output.data, sizeof(output.data));
+}
+
+EXPORT void select_output(Player *player, std::uint8_t *dst){
+	player->select_output(dst);
+}

@@ -26,6 +26,9 @@ public:
 	const auto &get_devices() const{
 		return this->devices;
 	}
+	Module &get_module(){
+		return *this->module;
+	}
 };
 
 class OutputDevice{
@@ -62,4 +65,10 @@ public:
 	virtual std::vector<AudioFormat> get_preferred_formats();
 	void flush();
 	void pause(bool pause);
+	const std::string &get_name() const{
+		return this->name;
+	}
+	uniqueid_t get_unique_id() const{
+		return this->unique_id;
+	}
 };

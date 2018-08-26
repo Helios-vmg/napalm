@@ -60,6 +60,8 @@ std::shared_ptr<Decoder> Player::internal_load(const std::string &path){
 }
 
 void Player::play(){
+	if (!this->output_device)
+		return;
 	LOCK_MUTEX2(this->external_mutex, "Player::play()");
 	switch (this->status){
 		case Status::Stopped:
@@ -214,6 +216,77 @@ BasicTrackInfo Player::get_basic_track_info(size_t playlist_position){
 	return BasicTrackInfo(numeric_track_info, std::move(helper));
 }
 
+OutputDeviceList Player::get_outputs(){
+	auto list = std::make_unique<PrivateOutputDeviceList>();
+	for (auto &output : this->outputs){
+		for (auto &kv : output->get_devices()){
+			std::uint8_t id[32];
+			memcpy(id, kv.first.data, 32);
+			auto name = kv.second->get_name();
+			name += " (";
+			name += output->get_module().get_name();
+			name += ")";
+			list->add(name, id);
+		}
+	}
+	auto ret = list->get_list();
+	list.release();
+	ret.release_function = [](void *p){ delete (PrivateOutputDeviceList *)p; };
+	return ret;
+}
+
+uniqueid_t Player::get_selected_output(){
+	if (!this->output_device){
+		uniqueid_t ret;
+		memset(ret.data, 0, sizeof(ret.data));
+		return ret;
+	}
+	return this->output_device->get_unique_id();
+}
+
+void Player::select_output(const uniqueid_t &dst){
+	for (auto &output : this->outputs){
+		for (auto &kv : output->get_devices()){
+			if (kv.first != dst)
+				continue;
+			try{
+				auto formats = kv.second->get_preferred_formats();
+				if (!formats.size())
+					continue;
+				kv.second->open(
+					0,
+					[this](void *dst, size_t size, size_t samples_queued) -> size_t{
+						if (this->status == Status::Paused)
+							return 0;
+						AudioQueueFlags flags = 0;
+						rational_t current_time;
+						auto ret = this->queue.pop_buffer(current_time, flags, dst, size, samples_queued);
+						LOCK_MUTEX2(this->internal_mutex, "Player::open_output()");
+						this->current_time = current_time;
+						if (flags&AudioQueueFlags_values::track_changed)
+							this->notification_queue.push(NotificationType::TrackChanged);
+						if (flags&AudioQueueFlags_values::seek_complete)
+							this->notification_queue.push(NotificationType::SeekComplete);
+
+						return ret;
+					},
+					[this](const AudioFormat &af){
+						if (af.format == Invalid || !af.channels || !af.freq)
+							return;
+						this->audio_format_changed(af);
+					}
+				);
+				if (this->output_device)
+					this->output_device->close();
+				this->output_device = kv.second;
+				this->final_format = formats.front();
+				this->queue.set_expected_format(this->final_format);
+				return;
+			}catch (std::exception &){}
+		}
+	}
+}
+
 void Player::decoding_function(){
 	std::shared_ptr<Decoder> decoder;
 	unsigned buffer_no = 0;
@@ -315,9 +388,6 @@ void Player::decoding_function(){
 	this->now_playing.reset();
 }
 
-#define CALL_BACK(x) \
-	
-
 void Player::async_notifications_function(){
 	while (true){
 		auto notification = this->notification_queue.pop();
@@ -348,6 +418,7 @@ void Player::load_plugins(){
 }
 
 void Player::open_output(){
+#if 0
 	if (!this->outputs.size())
 		throw std::runtime_error("No outputs available.");
 	for (auto &output : this->outputs)
@@ -393,6 +464,7 @@ void Player::open_output(){
 			}catch (std::exception &){}
 		}
 	}
+#endif
 }
 
 void Player::audio_format_changed(const AudioFormat &af){

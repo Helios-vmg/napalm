@@ -185,6 +185,7 @@
     <ClInclude Include="..\..\src\napalm\MetadataModule.h" />
     <ClInclude Include="..\..\src\napalm\Module.h" />
     <ClInclude Include="..\..\src\napalm\CircularQueue.h" />
+    <ClInclude Include="..\..\src\napalm\OutputDeviceList.h" />
     <ClInclude Include="..\..\src\napalm\OutputModule.h" />
     <ClInclude Include="..\..\src\napalm\Player.h" />
     <ClInclude Include="..\..\src\napalm\Playlist.h" />

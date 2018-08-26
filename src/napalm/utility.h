@@ -55,14 +55,14 @@ struct basic_uniqueid_t{
 	}
 	bool operator==(const basic_uniqueid_t<T, N> &other) const{
 		static_assert(N % sizeof(T) == 0, "You can't use this T for that N.");
-		for (size_t i = 0; i != N; i++)
+		for (size_t i = 0; i != N / sizeof(T); i++)
 			if (this->data[i] != other.data[i])
 				return false;
 		return true;
 	}
 	bool operator<(const basic_uniqueid_t<T, N> &other) const{
 		static_assert(N % sizeof(T) == 0 && std::is_unsigned<T>::value, "You can't use this T for that N.");
-		for (size_t i = 0; i != N; i++){
+		for (size_t i = 0; i != N / sizeof(T); i++){
 			auto a = this->data[i];
 			auto b = other.data[i];
 			if (a < b)
