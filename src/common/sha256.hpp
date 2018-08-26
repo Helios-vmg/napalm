@@ -12,7 +12,7 @@ public:
 		sha256_init(&this->state);
 	}
 	void input(const void *buffer, size_t size){
-		sha256_update(&this->state, (const BYTE *)buffer, size);
+		sha256_update(&this->state, (const std::uint8_t *)buffer, size);
 	}
 	void input(const std::string &s){
 		this->input(&s[0], s.size());
