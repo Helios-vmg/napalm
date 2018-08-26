@@ -892,7 +892,13 @@ int ogg_stream_pagein2(ogg_stream_state *os, ogg_page *og, int log_grow){
 
   if(bodysize){
     if (log_grow){
-      if(os->body_storage-bodysize<=os->body_fill && _os_body_expand(os,os->body_storage)) return -1;
+      if (os->body_storage - bodysize <= os->body_fill){
+        long grow_size = os->body_storage;
+        if (grow_size < bodysize)
+          grow_size = bodysize;
+        if (_os_body_expand(os, grow_size))
+          return -1;
+      }
     }else{
       if(_os_body_expand(os,bodysize)) return -1;
     }
