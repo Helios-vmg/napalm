@@ -17,6 +17,11 @@ static const std::uint64_t track_changed = (std::uint64_t)1 << 0;
 static const std::uint64_t seek_complete = (std::uint64_t)1 << 1;
 }
 
+struct AudioTime{
+	rational_t time;
+	std::uint64_t stream_id;
+};
+
 class AudioQueue{
 	AudioBuffer *head = nullptr,
 		*tail = nullptr,
@@ -36,7 +41,7 @@ public:
 	AudioQueue(AudioFormat &format): format(&format){}
 	~AudioQueue();
 	bool push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std::uint64_t &buffer_index);
-	size_t pop_buffer(rational_t &time, AudioQueueFlags &flags, void *void_dst, size_t size, size_t samples_queued);
+	size_t pop_buffer(AudioTime &atime, AudioQueueFlags &flags, void *void_dst, size_t size, size_t samples_queued);
 	BufferExtraData flush_queue();
 	void set_expected_format(const AudioFormat &format);
 	std::uint64_t get_next_buffer_index(){

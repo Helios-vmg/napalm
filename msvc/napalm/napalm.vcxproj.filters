@@ -93,6 +93,9 @@
     <ClInclude Include="..\..\src\napalm\OutputDeviceList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\napalm\LevelQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\napalm\Decoder.cpp">
@@ -138,6 +141,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\napalm\MetadataModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\napalm\LevelQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

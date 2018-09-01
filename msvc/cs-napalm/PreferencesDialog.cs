@@ -35,7 +35,7 @@ namespace cs_napalm
             int found = -1;
             for (int i = 0; i < outputs.Count; i++)
             {
-                if (selected.Equals(outputs[i].UniqueId))
+                if (selected.MemCmp(outputs[i].UniqueId) == 0)
                 {
                     found = i;
                     break;
@@ -62,6 +62,16 @@ namespace cs_napalm
                 return;
             var dev = (Player.OutputDevice) OutputsBox.Items[index];
             _player.SelectOutput(dev.UniqueId);
+        }
+
+        private void OutputsBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                Apply();
+                Close();
+                return;
+            }
         }
     }
 }

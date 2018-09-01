@@ -88,5 +88,35 @@ namespace cs_napalm
             }
             return false;
         }
+
+        public static int MemCmp(this byte[] a, byte[] b)
+        {
+            for (int i = 0; i < a.Length && i < b.Length; i++)
+            {
+                if (a[i] < b[i])
+                    return -1;
+                if (a[i] > b[i])
+                    return 1;
+            }
+            if (a.Length < b.Length)
+                return -1;
+            if (a.Length > b.Length)
+                return -1;
+            return 0;
+        }
+
+        public static double LinearToLog(Rational linear)
+        {
+            var linearD = linear.ToDouble();
+            if (linearD <= 0)
+                return -100;
+            return Math.Log10(linearD)*20;
+        }
+
+        public static double LogToLinear(Rational log)
+        {
+            var logD = log.ToDouble();
+            return Math.Pow(10, logD/20);
+        }
     }
 }

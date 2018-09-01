@@ -61,8 +61,8 @@ public:
 	const char *get_error();
 	void clear_error();
 	OutputDeviceList *get_device_list() override;
-	AudioFormat *get_supported_formats(size_t index) override;
-	OutputDevice *open_device(size_t index, size_t format_index, const AudioCallbackData &callback) override;
+	AudioFormat *get_supported_formats(const UniqueID &unique_id) override;
+	OutputDevice *open_device(const UniqueID &unique_id, size_t format_index, const AudioCallbackData &callback) override;
 };
 
 class BaseWasapiOutputDevice : public OutputDevice{
@@ -105,6 +105,7 @@ protected:
     com_unique<IAudioRenderClient> render_client;
     com_unique<IAudioSessionControl> session_control;
 	com_unique<SessionNotifier> notifier;
+	com_unique<ISimpleAudioVolume> volume;
 	std::string name;
 	std::string id;
 	size_t buffer_size = 0; // In samples.
@@ -113,6 +114,7 @@ protected:
 	unique_handle_t stop_event = create_event(true);
 	shared_handle_t stream_switch_event = create_event(true);
 	shared_handle_t stream_switch_complete_event = create_event(false);
+	shared_handle_t volume_event = create_event(true);
 	size_t bytes_per_sample = 0;
 	std::thread thread;
 	std::shared_ptr<std::atomic<bool>> switching_streams = std::make_shared<std::atomic<bool>>(false);
@@ -129,9 +131,10 @@ protected:
 	void get_more_samples();
 	void initialize_audio_engine();
 	virtual std::vector<HANDLE> get_events();
-	virtual void initialize_stream_switching(){}
+	virtual void initialize_stream_switching();
 	virtual bool handle_event(DWORD);
 	void start_client();
+	void volume_changed();
 public:
 	SpecificWasapiOutputDevice(WasapiOutput &parent, const com_shared<IMMDeviceEnumerator> &enumerator, com_unique<IMMDevice> &&);
 	~SpecificWasapiOutputDevice();
@@ -143,13 +146,13 @@ public:
 	}
 	virtual void open(size_t format_index, const AudioCallbackData &callback) override;
 	virtual void close() override;
+	void set_volume(const rational_t &) override;
 };
 
 class DefaultWasapiOutputDevice : public SpecificWasapiOutputDevice{
 	ERole role;
 
 	bool switch_streams();
-	void initialize_stream_switching() override;
 	std::vector<HANDLE> get_events() override;
 	bool handle_event(DWORD) override;
 public:

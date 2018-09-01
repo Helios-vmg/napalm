@@ -234,7 +234,26 @@ struct sample_converter{
 	}
 };
 
-typedef audio_buffer_t(*converter_f)(audio_buffer_t &&, size_t, size_t);
+template <NumberFormat Src, NumberFormat Dst>
+struct sample_copy_converter{
+	static audio_buffer_t f(const audio_buffer_t &buffer, size_t bytes_per_sample2, size_t channels){
+		const std::uint8_t *src = buffer->data;
+		auto ret = allocate_buffer_by_clone(buffer, buffer->sample_count * bytes_per_sample2);
+		ret->sample_count = buffer->sample_count;
+		auto dst = ret->data;
+
+		auto elements = buffer->sample_count * channels;
+		for (size_t i = 0; i < elements; i++){
+			auto x = loader<Src>::f(src);
+			auto y = converter<Src, Dst>::f(x);
+			writer<Dst>::f(dst, y);
+		}
+		return ret;
+	}
+};
+
+typedef audio_buffer_t (*converter_f)(audio_buffer_t &&, size_t, size_t);
+typedef audio_buffer_t (*copy_converter_f)(const audio_buffer_t &, size_t, size_t);
 
 template <NumberFormat Src, NumberFormat Dst>
 struct loop{
@@ -271,6 +290,41 @@ struct loop<Src, Invalid>{
 	}
 };
 
+template <NumberFormat Src, NumberFormat Dst>
+struct loop_copy{
+	static copy_converter_f f(NumberFormat src, NumberFormat dst){
+		if (Dst == Invalid)
+			return nullptr;
+		if (src == Src){
+			if (dst == Dst)
+				return sample_copy_converter<Src, Dst>::f;
+			return loop_copy<Src, (NumberFormat)(Dst - 1)>::f(src, dst);
+		}
+		return loop_copy<(NumberFormat)(Src - 1), Dst>::f(src, dst);
+	}
+};
+
+template <>
+struct loop_copy<Invalid, Invalid>{
+	static copy_converter_f f(NumberFormat src, NumberFormat dst){
+		return nullptr;
+	}
+};
+
+template <NumberFormat Dst>
+struct loop_copy<Invalid, Dst>{
+	static copy_converter_f f(NumberFormat src, NumberFormat dst){
+		return nullptr;
+	}
+};
+
+template <NumberFormat Src>
+struct loop_copy<Src, Invalid>{
+	static copy_converter_f f(NumberFormat src, NumberFormat dst){
+		return nullptr;
+	}
+};
+
 }
 
 #define C(x, y) ((int)x | ((int)y << 8))
@@ -286,4 +340,8 @@ SampleConverterFilter::SampleConverterFilter(const AudioFormat &af, NumberFormat
 
 audio_buffer_t SampleConverterFilter::apply(audio_buffer_t &&buffer){
 	return this->converter(std::move(buffer), this->bytes_per_dest_sample, this->source_format.channels);
+}
+
+copy_converter_f get_copy_converter(NumberFormat src, NumberFormat dst){
+	return loop_copy<Float64, Float64>::f(src, dst);
 }

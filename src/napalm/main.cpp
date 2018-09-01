@@ -50,8 +50,10 @@ EXPORT void previous(Player *player){
 	player->previous();
 }
 
-EXPORT RationalValue get_current_time(Player *player){
-	return to_RationalValue(player->get_current_position());
+EXPORT void get_current_time(Player *player, RationalValue *time, LevelQueue::Level *level){
+	rational_t temp;
+	player->get_current_position(temp, *level);
+	*time = to_RationalValue(temp);
 }
 
 EXPORT void set_callbacks(Player *player, const Callbacks *callbacks){
@@ -93,7 +95,7 @@ EXPORT void *get_front_cover(Player *player, std::int32_t playlist_position, std
 		return nullptr;
 	size_t size;
 	auto ret = player->get_front_cover(playlist_position, size);
-	if (size > std::numeric_limits<std::int32_t>::max())
+	if (size > (size_t)std::numeric_limits<std::int32_t>::max())
 		size = std::numeric_limits<std::int32_t>::max();
 	*data_size = (int)size;
 	return ret;
@@ -114,4 +116,8 @@ EXPORT void get_selected_output(Player *player, std::uint8_t *dst){
 
 EXPORT void select_output(Player *player, std::uint8_t *dst){
 	player->select_output(dst);
+}
+
+EXPORT void set_volume(Player *player, double volume){
+	player->set_volume(volume);
 }

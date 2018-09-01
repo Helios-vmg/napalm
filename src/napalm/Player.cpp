@@ -2,20 +2,18 @@
 #include "Module.h"
 #include "utility.h"
 #include "Filter.h"
-#include <samplerate.h>
-#include <boost/filesystem.hpp>
-#include <iostream>
+#include <RationalValue.h>
 #include <type_traits>
 #include <chrono>
 
 Player::Player(): queue(this->final_format), notification_queue(1024){
 	this->async_notifications_thread = std::thread([this](){ this->async_notifications_function(); });
 	this->load_plugins();
-	this->open_output();
 }
 
 Player::~Player(){
 	this->stop();
+	this->output_device.reset();
 	this->notification_queue.push(NotificationType::Destructing);
 	this->async_notifications_thread.join();
 }
@@ -95,6 +93,10 @@ void Player::seek(const rational_t &time){
 	this->now_playing->flush();
 	this->queue.flush_queue();
 	this->output_device->flush();
+	auto stream_id = this->now_playing->get_first_source().get_stream_id();
+	auto it = this->level_queues.find(stream_id);
+	if (it != this->level_queues.end())
+		it->second->clear(time);
 	this->executing_seek = true;
 }
 
@@ -128,6 +130,7 @@ void Player::stop(){
 		this->now_playing->flush();
 		this->queue.flush_queue();
 		this->output_device->flush();
+		this->current_time = {-1, 1};
 	}
 	if (this->decoding_thread.joinable())
 		this->decoding_thread.join();
@@ -150,9 +153,21 @@ void Player::previous(){
 	this->output_device->flush();
 }
 
-rational_t Player::get_current_position(){
+void Player::get_current_position(rational_t &time, LevelQueue::Level &level){
 	LOCK_MUTEX2(this->external_mutex, "Player::get_current_position()");
-	return this->current_time;
+	time = this->current_time;
+	if (this->current_stream_id != unset_current_stream_id){
+		while (this->level_queues.size()){
+			auto begin = this->level_queues.begin();
+			if (begin->first < this->current_stream_id){
+				this->level_queues.erase(begin);
+				continue;
+			}
+			level = begin->second->get_level(this->current_time);
+			return;
+		}
+	}
+	level.level_count = 0;
 }
 
 void Player::set_callbacks(const Callbacks &callbacks){
@@ -219,10 +234,10 @@ BasicTrackInfo Player::get_basic_track_info(size_t playlist_position){
 OutputDeviceList Player::get_outputs(){
 	auto list = std::make_unique<PrivateOutputDeviceList>();
 	for (auto &output : this->outputs){
-		for (auto &kv : output->get_devices()){
+		for (auto &dev : output->get_devices()){
 			std::uint8_t id[32];
-			memcpy(id, kv.first.data, 32);
-			auto name = kv.second->get_name();
+			memcpy(id, dev->get_unique_id().data, 32);
+			auto name = dev->get_name();
 			name += " (";
 			name += output->get_module().get_name();
 			name += ")";
@@ -244,25 +259,46 @@ uniqueid_t Player::get_selected_output(){
 	return this->output_device->get_unique_id();
 }
 
+static rational_t linear_to_db(const rational_t &linear){
+	double linearD = (double)linear.numerator() / linear.denominator();
+	double db;
+	if (linearD <= 0)
+		db = -100;
+	else
+		db = log10(linearD) * 20.0;
+	return to_rational<std::int64_t, (std::int64_t)1 << 32>(db);
+}
+
 void Player::select_output(const uniqueid_t &dst){
+	if (!dst){
+		if (this->output_device){
+			this->stop();
+			this->output_device.reset();
+		}
+		return;
+	}
+	if (this->output_device && this->output_device->get_unique_id() == dst)
+		return;
 	for (auto &output : this->outputs){
-		for (auto &kv : output->get_devices()){
-			if (kv.first != dst)
+		for (auto &dev : output->get_devices()){
+			if (dev->get_unique_id() != dst)
 				continue;
 			try{
-				auto formats = kv.second->get_preferred_formats();
+				auto formats = dev->get_preferred_formats();
 				if (!formats.size())
 					continue;
-				kv.second->open(
+				dev->open(
 					0,
 					[this](void *dst, size_t size, size_t samples_queued) -> size_t{
 						if (this->status == Status::Paused)
 							return 0;
 						AudioQueueFlags flags = 0;
-						rational_t current_time;
-						auto ret = this->queue.pop_buffer(current_time, flags, dst, size, samples_queued);
+						AudioTime atime;
+						auto ret = this->queue.pop_buffer(atime, flags, dst, size, samples_queued);
+						LOCK_MUTEX2(this->external_mutex, "Player::open_output()");
 						LOCK_MUTEX2(this->internal_mutex, "Player::open_output()");
-						this->current_time = current_time;
+						this->current_time = atime.time;
+						this->current_stream_id = atime.stream_id;
 						if (flags&AudioQueueFlags_values::track_changed)
 							this->notification_queue.push(NotificationType::TrackChanged);
 						if (flags&AudioQueueFlags_values::seek_complete)
@@ -274,11 +310,18 @@ void Player::select_output(const uniqueid_t &dst){
 						if (af.format == Invalid || !af.channels || !af.freq)
 							return;
 						this->audio_format_changed(af);
+					},
+					[this](const rational_t &linear_volume){
+						Notification n(NotificationType::VolumeChangedBySystem);
+						auto db = linear_to_db(linear_volume);
+						n.param2 = db.numerator();
+						n.param3 = db.denominator();
+						this->notification_queue.push(std::move(n));
 					}
 				);
 				if (this->output_device)
 					this->output_device->close();
-				this->output_device = kv.second;
+				this->output_device = dev;
 				this->final_format = formats.front();
 				this->queue.set_expected_format(this->final_format);
 				return;
@@ -287,10 +330,30 @@ void Player::select_output(const uniqueid_t &dst){
 	}
 }
 
+void Player::set_volume(double volume){
+	if (this->output_device){
+		rational_t q(0, 1);
+		if (isfinite(volume))
+			q = to_rational<std::int64_t, (std::int64_t)1 << 32>(pow(10.0, volume / 20));
+		this->output_device->set_volume(q);
+	}
+}
+
+static LevelQueue::Level peak_function(const std::vector<LevelQueue::Level> &input){
+	LevelQueue::Level ret;
+	ret.level_count = 0;
+	std::fill(ret.levels, ret.levels + array_length(ret.levels), 0.f);
+	for (auto &l : input){
+		ret.level_count = std::max(ret.level_count, l.level_count);
+		for (int i = 0; i < l.level_count; i++)
+			ret.levels[i] = std::max(ret.levels[i], abs(l.levels[i]));
+	}
+	return ret;
+}
+
 void Player::decoding_function(){
 	std::shared_ptr<Decoder> decoder;
 	unsigned buffer_no = 0;
-	//std::ofstream output("output.raw", std::ios::binary);
 	auto buffer_index = this->queue.get_next_buffer_index();
 	try{
 		AudioFormat src_format = {Invalid, 0, 0};
@@ -341,12 +404,21 @@ void Player::decoding_function(){
 						if (!decoder || decoder->get_stream().get_path() != current_track_path)
 							decoder = this->internal_load(current_track_path);
 						auto stream = decoder->get_substream(current_track_subtrack);
+						auto stream_id = stream->get_stream_id();
+
+						auto queue = std::make_shared<LevelQueue>(peak_function);
+						queue->set_format(stream->get_audio_format());
+						{
+							LOCK_MUTEX2(this->external_mutex, "Player::decoding_function(), State::Initial");
+							this->level_queues[stream_id] = queue;
+						}
+
 						stream->seek_to_sample(0, false);
 						auto new_src_format = stream->get_audio_format();
 						if (!last_stream || new_src_format != src_format)
-							np = build_filter_chain(std::move(stream), new_src_format, this->final_format);
+							np = build_filter_chain(std::move(stream), new_src_format, this->final_format, queue);
 						else
-							np = rebuild_filter_chain(std::move(stream), src_format, new_src_format, this->final_format);
+							np = rebuild_filter_chain(std::move(stream), src_format, new_src_format, this->final_format, queue);
 						last_stream.reset();
 						src_format = new_src_format;
 					}
@@ -417,62 +489,10 @@ void Player::load_plugins(){
 	}
 }
 
-void Player::open_output(){
-#if 0
-	if (!this->outputs.size())
-		throw std::runtime_error("No outputs available.");
-	for (auto &output : this->outputs)
-		for (auto &kv : output->get_devices())
-			this->devices[kv.first] = kv.second;
-	if (!this->devices.size())
-		throw std::runtime_error("No devices available.");
-
-	//Test code:
-	for (auto &output : this->outputs){
-		for (auto &kv : output->get_devices()){
-			try{
-				auto formats = kv.second->get_preferred_formats();
-				if (!formats.size())
-					continue;
-				kv.second->open(
-					0,
-					[this](void *dst, size_t size, size_t samples_queued) -> size_t{
-						if (this->status == Status::Paused)
-							return 0;
-						AudioQueueFlags flags = 0;
-						rational_t current_time;
-						auto ret = this->queue.pop_buffer(current_time, flags, dst, size, samples_queued);
-						LOCK_MUTEX2(this->internal_mutex, "Player::open_output()");
-						this->current_time = current_time;
-						if (flags&AudioQueueFlags_values::track_changed)
-							this->notification_queue.push(NotificationType::TrackChanged);
-						if (flags&AudioQueueFlags_values::seek_complete)
-							this->notification_queue.push(NotificationType::SeekComplete);
-
-						return ret;
-					},
-					[this](const AudioFormat &af){
-						if (af.format == Invalid || !af.channels || !af.freq)
-							return;
-						this->audio_format_changed(af);
-					}
-				);
-				this->output_device = kv.second;
-				this->final_format = formats.front();
-				this->queue.set_expected_format(this->final_format);
-				return;
-			}catch (std::exception &){}
-		}
-	}
-#endif
-}
-
 void Player::audio_format_changed(const AudioFormat &af){
 	auto old_format = this->final_format;
-	if (af == old_format){
-		//std::cout << "Default device changed. Nothing special to do.\n";
+	if (af == old_format)
 		return;
-	}
 
 	this->queue.set_expected_format(af);
 
@@ -482,15 +502,14 @@ void Player::audio_format_changed(const AudioFormat &af){
 		this->now_playing = std::move(temp);
 	auto extra = this->queue.flush_queue();
 	auto substream = static_cast<DecoderSubstream *>(this->now_playing.get());
-	if (substream->get_stream_id() == extra.stream_id){
+	auto stream_id = substream->get_stream_id();
+	if (stream_id == extra.stream_id){
 		rational_t time(extra.timestamp.numerator, extra.timestamp.denominator);
 		time += rational_t(extra.sample_offset, old_format.freq);
 		substream->seek_to_second(time, false);
 	}
 	auto format = substream->get_audio_format();
 	this->final_format = af;
-	//std::cout << "Default device changed. Format was changed.\n"
-	//	"Old format: " << old_format << "\n"
-	//	"New format: " << af << std::endl;
-	this->now_playing = build_filter_chain(std::move(this->now_playing), format, this->final_format);
+	LOCK_MUTEX2(this->external_mutex, "Player::audio_format_changed()");
+	this->now_playing = build_filter_chain(std::move(this->now_playing), format, this->final_format, this->level_queues[stream_id]);
 }

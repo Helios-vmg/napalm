@@ -1,6 +1,6 @@
 #include <output_module.h>
 #include <output.hpp>
-#include "NullOutput.h"
+#include "PortAudioOutput.h"
 
 #if defined WIN32 || defined _WIN32 || defined _WIN64
 #define EXPORT extern "C" __declspec(dllexport)
@@ -9,7 +9,7 @@
 #endif
 
 EXPORT ModulePtr InitModule(){
-	return new NullOutput;
+	return new PortAudioOutput;
 }
 
 EXPORT int GetModuleApiVersion(ModulePtr){
@@ -17,7 +17,7 @@ EXPORT int GetModuleApiVersion(ModulePtr){
 }
 
 EXPORT void DestroyModule(ModulePtr instance){
-	delete (NullOutput *)instance;
+	delete (PortAudioOutput *)instance;
 }
 
 static const char **get_module_types(ModulePtr){
@@ -29,7 +29,7 @@ static const char **get_module_types(ModulePtr){
 }
 
 static const char *get_module_name(ModulePtr){
-	return "NullOutput";
+	return "PortAudioOutput";
 }
 
 static const char *get_module_version(ModulePtr){
@@ -37,12 +37,12 @@ static const char *get_module_version(ModulePtr){
 }
 
 static const char *get_error_message(ModulePtr instance){
-	auto &output = *(NullOutput *)instance;
+	auto &output = *(PortAudioOutput *)instance;
 	return output.get_error();
 }
 
 OutputDeviceList *output_get_device_list(ModulePtr instance){
-	auto &output = *(NullOutput *)instance;
+	auto &output = *(PortAudioOutput *)instance;
 	try{
 		output.clear_error();
 		return output.get_device_list();
@@ -53,7 +53,7 @@ OutputDeviceList *output_get_device_list(ModulePtr instance){
 }
 
 OutputDevicePtr output_open_device(ModulePtr instance, const UniqueID *unique_id, size_t format_index, const AudioCallbackData *callback){
-	auto &output = *(NullOutput *)instance;
+	auto &output = *(PortAudioOutput *)instance;
 	try{
 		output.clear_error();
 		return output.open_device(*unique_id, format_index, *callback);
@@ -64,11 +64,11 @@ OutputDevicePtr output_open_device(ModulePtr instance, const UniqueID *unique_id
 }
 
 void output_device_close(OutputDevicePtr instance){
-	((NullDevice *)instance)->close();
+	((PortAudioDevice *)instance)->close();
 }
 
 AudioFormat *output_get_supported_formats(ModulePtr instance, const UniqueID *unique_id){
-	auto &output = *(NullOutput *)instance;
+	auto &output = *(PortAudioOutput *)instance;
 	try{
 		output.clear_error();
 		return output.get_supported_formats(*unique_id);

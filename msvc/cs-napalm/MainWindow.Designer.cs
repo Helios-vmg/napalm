@@ -60,10 +60,12 @@
             this.TrackTitleLabel = new System.Windows.Forms.Label();
             this.TrackArtistLabel = new System.Windows.Forms.Label();
             this.AlbumLabel = new System.Windows.Forms.Label();
+            this.VolumeControl = new System.Windows.Forms.TrackBar();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.preferencesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.LevelMeter = new cs_napalm.LevelMeter();
             this.tableLayoutPanel3.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -71,6 +73,7 @@
             this.tableLayoutPanel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.SeekBar)).BeginInit();
             this.tableLayoutPanel6.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.VolumeControl)).BeginInit();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -339,9 +342,11 @@
             // 
             // tableLayoutPanel6
             // 
-            this.tableLayoutPanel6.ColumnCount = 2;
+            this.tableLayoutPanel6.ColumnCount = 4;
             this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tableLayoutPanel6.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel6.Controls.Add(this.label1, 0, 0);
             this.tableLayoutPanel6.Controls.Add(this.label2, 0, 1);
             this.tableLayoutPanel6.Controls.Add(this.label3, 0, 2);
@@ -352,6 +357,8 @@
             this.tableLayoutPanel6.Controls.Add(this.TrackTitleLabel, 1, 0);
             this.tableLayoutPanel6.Controls.Add(this.TrackArtistLabel, 1, 1);
             this.tableLayoutPanel6.Controls.Add(this.AlbumLabel, 1, 2);
+            this.tableLayoutPanel6.Controls.Add(this.VolumeControl, 3, 0);
+            this.tableLayoutPanel6.Controls.Add(this.LevelMeter, 2, 0);
             this.tableLayoutPanel6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel6.Location = new System.Drawing.Point(3, 3);
             this.tableLayoutPanel6.Name = "tableLayoutPanel6";
@@ -467,6 +474,23 @@
             this.AlbumLabel.Size = new System.Drawing.Size(0, 13);
             this.AlbumLabel.TabIndex = 9;
             // 
+            // VolumeControl
+            // 
+            this.VolumeControl.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
+            this.VolumeControl.Location = new System.Drawing.Point(449, 3);
+            this.VolumeControl.Maximum = 1000;
+            this.VolumeControl.Name = "VolumeControl";
+            this.VolumeControl.Orientation = System.Windows.Forms.Orientation.Vertical;
+            this.tableLayoutPanel6.SetRowSpan(this.VolumeControl, 6);
+            this.VolumeControl.Size = new System.Drawing.Size(45, 181);
+            this.VolumeControl.TabIndex = 10;
+            this.VolumeControl.TickFrequency = 100;
+            this.VolumeControl.TickStyle = System.Windows.Forms.TickStyle.Both;
+            this.VolumeControl.Value = 1000;
+            this.VolumeControl.ValueChanged += new System.EventHandler(this.volumeControl_ValueChanged);
+            this.VolumeControl.MouseDown += new System.Windows.Forms.MouseEventHandler(this.VolumeControl_MouseDown);
+            this.VolumeControl.MouseUp += new System.Windows.Forms.MouseEventHandler(this.VolumeControl_MouseUp);
+            // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -489,16 +513,26 @@
             // preferencesToolStripMenuItem
             // 
             this.preferencesToolStripMenuItem.Name = "preferencesToolStripMenuItem";
-            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.preferencesToolStripMenuItem.Text = "&Preferences...";
             this.preferencesToolStripMenuItem.Click += new System.EventHandler(this.preferencesToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
             this.exitToolStripMenuItem.Text = "&Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            // 
+            // LevelMeter
+            // 
+            this.LevelMeter.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.LevelMeter.Location = new System.Drawing.Point(399, 3);
+            this.LevelMeter.MaximumSize = new System.Drawing.Size(44, 0);
+            this.LevelMeter.Name = "LevelMeter";
+            this.tableLayoutPanel6.SetRowSpan(this.LevelMeter, 6);
+            this.LevelMeter.Size = new System.Drawing.Size(44, 181);
+            this.LevelMeter.TabIndex = 11;
             // 
             // MainWindow
             // 
@@ -524,6 +558,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.SeekBar)).EndInit();
             this.tableLayoutPanel6.ResumeLayout(false);
             this.tableLayoutPanel6.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.VolumeControl)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
@@ -568,6 +603,8 @@
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem preferencesToolStripMenuItem;
+        private System.Windows.Forms.TrackBar VolumeControl;
+        private LevelMeter LevelMeter;
     }
 }
 

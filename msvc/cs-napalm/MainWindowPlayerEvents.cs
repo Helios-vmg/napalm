@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -26,6 +27,9 @@ namespace cs_napalm
                     break;
                 case Player.NotificationType.PlaylistUpdated:
                     OnPlaylistUpdated((int)notification.Param2, (int)notification.Param3);
+                    break;
+                case Player.NotificationType.VolumeChangedBySystem:
+                    OnVolumeChangedBySystem(new Rational(notification.Param2, notification.Param3));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -58,7 +62,7 @@ namespace cs_napalm
             if (!DraggingSeekbar)
                 return;
             DraggingSeekbar = false;
-            UpdateTime(new Rational(-1), false, false);
+            UpdateTime(new Rational(-1), false);
         }
 
         private void OnPlaylistUpdated(int beginIndex, int endIndex)
@@ -87,6 +91,28 @@ namespace cs_napalm
                     else
                         PlaylistView.Items[i] = item;
                 }
+            }
+        }
+
+        private void OnVolumeChangedBySystem(Rational rational)
+        {
+            if (this.FromMainThread(() => OnVolumeChangedBySystem(rational)))
+                return;
+            if (_draggingVolume)
+                return;
+            var dB = rational.ToDouble();
+            if (dB < -100)
+                dB = double.NegativeInfinity;
+            else if (dB > 0)
+                dB = 0;
+            _volumeRecursion++;
+            try
+            {
+                VolumeControlValue = dB;
+            }
+            finally
+            {
+                _volumeRecursion--;
             }
         }
 

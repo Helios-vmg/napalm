@@ -93,7 +93,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>FLAC__NO_DLL;WIN32;_DEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)dependencies\sources\libcue-2.2.1\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -110,7 +110,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>FLAC__NO_DLL;_DEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)dependencies\sources\libcue-2.2.1\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -129,7 +129,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>FLAC__NO_DLL;WIN32;NDEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)dependencies\sources\libcue-2.2.1\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -151,7 +151,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>FLAC__NO_DLL;NDEBUG;_WINDOWS;_USRDLL;FLACDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;$(SolutionDir)dependencies\sources\libvorbis-1.3.6\include\;$(SolutionDir)dependencies\sources\libcue-2.2.1\include\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

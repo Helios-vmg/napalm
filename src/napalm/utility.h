@@ -84,6 +84,12 @@ struct basic_uniqueid_t{
 	bool operator<=(const basic_uniqueid_t<T, N> &other) const{
 		return !(other < *this);
 	}
+	bool operator!() const{
+		for (auto i : this->data)
+			if (i)
+				return false;
+		return true;
+	}
 };
 
 template <typename T, typename F>

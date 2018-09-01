@@ -24,7 +24,7 @@ namespace cs_napalm
             DefaultCover = ResizeBitmap(Resources.napalm_icon, ArtCoverLabel.Size);
             DisplayDefaultCover();
 
-            _timer.Interval = HighPrecisionTime ? 10 : 250;
+            _timer.Interval = HighPrecisionTime ? 10 : 50;
             _timer.Tick += (sender, args) => OnTick();
             _timer.Enabled = true;
         }
@@ -64,10 +64,10 @@ namespace cs_napalm
 
         private void OnTick()
         {
-            UpdateTime(new Rational(-1), false, true);
+            UpdateTime(new Rational(-1), true);
         }
 
-        private void UpdateTime(Rational overrideValue, bool hpt, bool timed)
+        private void UpdateTime(Rational overrideValue, bool timed)
         {
             if (_player == null)
             {
@@ -75,9 +75,14 @@ namespace cs_napalm
                 DurationLabel.Text = Utility.AbsoluteFormatTime(-1);
                 return;
             }
-            var time = overrideValue < 0 ? _player.GetCurrentTime() : overrideValue;
-            if (timed && !DraggingSeekbar)
-                TimeLabel.Text = Utility.AbsoluteFormatTime(time.ToDouble(), DraggingSeekbar || hpt || HighPrecisionTime);
+            Rational time;
+            float[] levels;
+            _player.GetCurrentTime(out time, out levels);
+            time = overrideValue < 0 ? time : overrideValue;
+            if (timed)
+                TimeLabel.Text = Utility.AbsoluteFormatTime(time.ToDouble(), HighPrecisionTime);
+            if (levels != null)
+                LevelMeter.LevelChanged(levels);
 
             var position = (time*100).ToIntTruncate();
             var duration = (_currentDuration*100).ToIntTruncate();
@@ -114,14 +119,17 @@ namespace cs_napalm
             TrackArtistLabel.Text = info.TrackArtist;
             AlbumLabel.Text = info.Album;
             SetDuration(info.Duration);
-            UpdateTime(new Rational(0), false, false);
+            UpdateTime(new Rational(0), false);
         }
 
-        private void preferencesToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SetVolumeToolTip(double dB)
         {
-            InitPlayer();
-            var dialog = new PreferencesDialog(_player);
-            dialog.ShowDialog(this);
+            volumeTooltip.SetToolTip(VolumeControl, $"{dB:F1} dB");
+        }
+
+        private void SetSeekBarToolTip(Rational time)
+        {
+            seekBarTooltip.SetToolTip(SeekBar, Utility.AbsoluteFormatTime(time.ToDouble()));
         }
     }
 }

@@ -8,8 +8,8 @@ class Output{
 public:
 	virtual ~Output(){}
 	virtual OutputDeviceList *get_device_list() = 0;
-	virtual OutputDevice *open_device(size_t index, size_t format_index, const AudioCallbackData &callback) = 0;
-	virtual AudioFormat *get_supported_formats(size_t index) = 0;
+	virtual OutputDevice *open_device(const UniqueID &, size_t format_index, const AudioCallbackData &callback) = 0;
+	virtual AudioFormat *get_supported_formats(const UniqueID &unique_id) = 0;
 };
 
 class OutputDevice{
@@ -29,4 +29,5 @@ public:
 	OutputDevice(const AudioCallbackData &callback):
 		callback(callback){}
 	virtual ~OutputDevice(){}
+	virtual void set_volume(const rational_t &){}
 };

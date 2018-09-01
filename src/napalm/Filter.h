@@ -2,6 +2,7 @@
 
 #include "Decoder.h"
 #include "BufferSource.h"
+#include "LevelQueue.h"
 #include <deque>
 
 class TrueFilter{
@@ -70,8 +71,19 @@ public:
 	audio_buffer_t apply(audio_buffer_t &&);
 };
 
+class LevelComputerFilter : public TrueFilter{
+	std::shared_ptr<LevelQueue> queue;
+public:
+	LevelComputerFilter(const AudioFormat &af, const std::shared_ptr<LevelQueue> &queue): TrueFilter(af), queue(queue){}
+	audio_buffer_t apply(audio_buffer_t &&buffer){
+		this->queue->push_data(buffer);
+		return std::move(buffer);
+	}
+};
+
 typedef GenericFilterSource<ChannelMixerFilter> ChannelMixerFilterSource;
 typedef GenericFilterSource<SampleConverterFilter> SampleConverterFilterSource;
+typedef GenericFilterSource<LevelComputerFilter> LevelComputerFilterSource;
 
 struct SRC_STATE_tag;
 typedef struct SRC_STATE_tag SRC_STATE;
@@ -133,6 +145,7 @@ std::unique_ptr<BufferSource> build_filter_chain(
 	std::unique_ptr<BufferSource> &&source,
 	const AudioFormat &saf,
 	const AudioFormat &daf,
+	const std::shared_ptr<LevelQueue> &,
 	ResamplerPreset preset = ResamplerPreset::SincBestQuality
 );
 
@@ -141,5 +154,6 @@ std::unique_ptr<BufferSource> rebuild_filter_chain(
 	const AudioFormat &old_saf,
 	const AudioFormat &new_saf,
 	const AudioFormat &daf,
+	const std::shared_ptr<LevelQueue> &,
 	ResamplerPreset preset = ResamplerPreset::SincBestQuality
 );

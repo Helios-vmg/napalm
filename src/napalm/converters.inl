@@ -813,7 +813,7 @@ struct converter<Float64, Float32>{
 template <>
 struct converter<IntU8, IntU8>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -822,7 +822,7 @@ struct converter<IntU8, IntU8>{
 template <>
 struct converter<IntU16, IntU16>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -831,7 +831,7 @@ struct converter<IntU16, IntU16>{
 template <>
 struct converter<IntU24, IntU24>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -840,7 +840,7 @@ struct converter<IntU24, IntU24>{
 template <>
 struct converter<IntU32, IntU32>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -849,7 +849,7 @@ struct converter<IntU32, IntU32>{
 template <>
 struct converter<IntS8, IntS8>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -858,7 +858,7 @@ struct converter<IntS8, IntS8>{
 template <>
 struct converter<IntS16, IntS16>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -867,7 +867,7 @@ struct converter<IntS16, IntS16>{
 template <>
 struct converter<IntS24, IntS24>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -876,7 +876,7 @@ struct converter<IntS24, IntS24>{
 template <>
 struct converter<IntS32, IntS32>{
 	static std::uint32_t f(std::uint32_t x){
-		return 0;
+		return x;
 	}
 };
 
@@ -885,7 +885,7 @@ struct converter<IntS32, IntS32>{
 template <>
 struct converter<Float32, Float32>{
 	static float f(float x){
-		return 0;
+		return x;
 	}
 };
 
@@ -894,7 +894,7 @@ struct converter<Float32, Float32>{
 template <>
 struct converter<Float64, Float64>{
 	static double f(double x){
-		return 0;
+		return x;
 	}
 };
 

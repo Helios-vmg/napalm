@@ -3,7 +3,7 @@
 #include <sha256.hpp>
 #include <sstream>
 #include <avrt.h>
-//#include <iostream>
+#include <RationalValue.h>
 
 WasapiOutput::WasapiOutput(){}
 
@@ -50,8 +50,9 @@ void release_PROPVARIANT(PROPVARIANT *p){
 }
 
 void WasapiOutput::init_device_list(){
-	if (this->devices_initialized)
-		return;
+	//if (this->devices_initialized)
+	//	return;
+	this->devices.clear();
 	auto result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 	if (SUCCEEDED(result))
 		this->com_initialized = true;
@@ -131,7 +132,7 @@ public:
 				this->strings.push_back(i->get_name());
 				auto &item = this->items[j];
 				item.name = this->strings[j].c_str();
-				memcpy(item.unique_id, i->get_hash().data(), sizeof(item.unique_id));
+				memcpy(item.unique_id.unique_id, i->get_hash().data(), sizeof(item.unique_id.unique_id));
 			}
 			length = this->items.size();
 		}else{
@@ -156,11 +157,13 @@ OutputDeviceList *WasapiOutput::get_device_list(){
 	return list->get_list();
 }
 
-AudioFormat *WasapiOutput::get_supported_formats(size_t index){
-	this->init_device_list();
-	if (index >= this->devices.size())
-		return nullptr;
-	return this->devices[index]->get_supported_formats();
+AudioFormat *WasapiOutput::get_supported_formats(const UniqueID &unique_id){
+	for (auto &device : this->devices){
+		if (memcmp(device->get_hash().data(), unique_id.unique_id, sizeof(unique_id.unique_id)))
+			continue;
+		return device->get_supported_formats();
+	}
+	return nullptr;
 }
 
 unique_handle_t create_event(bool auto_reset){
@@ -178,13 +181,9 @@ void SpecificWasapiOutputDevice::check_events(){
 }
 
 SpecificWasapiOutputDevice::SpecificWasapiOutputDevice(WasapiOutput &parent, const com_shared<IMMDeviceEnumerator> &enumerator, com_unique<IMMDevice> &&device):
-		BaseWasapiOutputDevice(parent, enumerator),
-		device(std::move(device)),
-		audio_client(nullptr, com_release<decltype(audio_client)::element_type>),
-		render_client(nullptr, com_release<decltype(render_client)::element_type>),
-		session_control(nullptr, com_release<decltype(session_control)::element_type>),
-		notifier(nullptr, com_release<decltype(notifier)::element_type>){
-	this->check_events();
+		SpecificWasapiOutputDevice(parent, enumerator){
+	
+	this->device = std::move(device);
 	this->set_vars();
 }
 
@@ -194,7 +193,8 @@ SpecificWasapiOutputDevice::SpecificWasapiOutputDevice(WasapiOutput &parent, con
 		audio_client(nullptr, com_release<decltype(audio_client)::element_type>),
 		render_client(nullptr, com_release<decltype(render_client)::element_type>),
 		session_control(nullptr, com_release<decltype(session_control)::element_type>),
-		notifier(nullptr, com_release<decltype(notifier)::element_type>){
+		notifier(nullptr, com_release<decltype(notifier)::element_type>),
+		volume(nullptr, com_release<decltype(volume)::element_type>){
 	
 	this->check_events();
 }
@@ -373,10 +373,15 @@ void BaseWasapiOutputDevice::set_format(WAVEFORMATEX *exformat, size_t size){
 	this->formats.push_back(af);
 }
 
+RationalValue to_RationalValue(double x){
+	return to_RationalValue(to_rational<std::int64_t, (std::int64_t)1 << 32>(x));
+}
+
 void SpecificWasapiOutputDevice::open(size_t format_index, const AudioCallbackData &callback){
 	if (format_index >= this->exformats.size())
 		throw std::runtime_error("Invalid format index.");
 
+	this->volume.reset();
 	this->render_client.reset();
 	this->audio_client.reset();
 	
@@ -390,6 +395,12 @@ void SpecificWasapiOutputDevice::open(size_t format_index, const AudioCallbackDa
 	this->callback = callback;
 	this->thread = std::thread([this](){ this->thread_func(); });
 	this->start_client();
+	if (this->volume){
+		float volume;
+		auto result = this->volume->GetMasterVolume(&volume);
+		if (SUCCEEDED(result) && this->callback.volume_changed)
+			this->callback.volume_changed(this->callback.cb_data, to_RationalValue(volume));
+	}
 }
 
 void SpecificWasapiOutputDevice::close(){
@@ -400,10 +411,11 @@ void SpecificWasapiOutputDevice::close(){
 		this->thread.join();
 	if (this->audio_client)
 		this->audio_client->Stop();
+	this->volume.reset();
 	this->render_client.reset();
-	this->notifier.reset();
+	//this->notifier.reset();
 	this->session_control.reset();
-	this->enumerator.reset();
+	//this->enumerator.reset();
 	this->audio_client.reset();
 	this->stopping = false;
 }
@@ -454,15 +466,23 @@ void SpecificWasapiOutputDevice::initialize_audio_engine(){
     if (!SUCCEEDED(result))
 		throw std::runtime_error("Failed to get render client: " + to_string(result));
 	this->render_client = to_unique(render_client_ptr);
+
+	ISimpleAudioVolume *volume_ptr;
+	result = this->audio_client->GetService(IID_PPV_ARGS(&volume_ptr));
+	if (SUCCEEDED(result))
+		this->volume = to_unique(volume_ptr);
+	else
+		this->volume.reset();
 }
 
-OutputDevice *WasapiOutput::open_device(size_t index, size_t format_index, const AudioCallbackData &callback){
-	if (index >= this->devices.size())
-		throw std::runtime_error("Invalid device index.");
-
-	auto ret = this->devices[index].get();
-	ret->open(format_index, callback);
-	return ret;
+OutputDevice *WasapiOutput::open_device(const UniqueID &unique_id, size_t format_index, const AudioCallbackData &callback){
+	for (auto &device : this->devices){
+		if (memcmp(device->get_hash().data(), unique_id.unique_id, sizeof(unique_id.unique_id)))
+			continue;
+		device->open(format_index, callback);
+		return device.release();
+	}
+	return nullptr;
 }
 
 template <typename T, size_t N>
@@ -492,17 +512,22 @@ std::vector<HANDLE> SpecificWasapiOutputDevice::get_events(){
 	return {
 		this->stop_event.get(),
 		this->samples_event.get(),
+		this->volume_event.get(),
 	};
 }
 
 bool SpecificWasapiOutputDevice::handle_event(DWORD wait_result){
 	const DWORD stop = WAIT_OBJECT_0 + 0;
 	const DWORD get_more_samples = WAIT_OBJECT_0 + 1;
+	const DWORD volume = WAIT_OBJECT_0 + 2;
 	switch (wait_result){
 		case stop:
 			return true;
 		case get_more_samples:
 			this->get_more_samples();
+			return true;
+		case volume:
+			this->volume_changed();
 			return true;
 	}
 	return true;
@@ -513,6 +538,7 @@ std::vector<HANDLE> DefaultWasapiOutputDevice::get_events(){
 		this->stop_event.get(),
 		this->stream_switch_event.get(),
 		this->samples_event.get(),
+		this->volume_event.get(),
 	};
 }
 
@@ -520,6 +546,7 @@ bool DefaultWasapiOutputDevice::handle_event(DWORD wait_result){
 	const DWORD stop = WAIT_OBJECT_0 + 0;
 	const DWORD stream_switch = WAIT_OBJECT_0 + 1;
 	const DWORD get_more_samples = WAIT_OBJECT_0 + 2;
+	const DWORD volume = WAIT_OBJECT_0 + 3;
 	switch (wait_result){
 		case stop:
 			return true;
@@ -527,6 +554,9 @@ bool DefaultWasapiOutputDevice::handle_event(DWORD wait_result){
 			return !this->switch_streams();
 		case get_more_samples:
 			this->get_more_samples();
+			return true;
+		case volume:
+			this->volume_changed();
 			return true;
 	}
 	return true;
@@ -570,18 +600,25 @@ void SpecificWasapiOutputDevice::get_more_samples(){
 
 class SessionNotifier : public IAudioSessionEvents, public IMMNotificationClient{
 	shared_handle_t stream_switch_event,
-		stream_switch_complete_event;
+		stream_switch_complete_event,
+		volume_event;
 	std::shared_ptr<std::atomic<bool>> switching_streams;
     LONG refcount = 0;
+	std::atomic<float> volume = 1;
 public:
 	SessionNotifier(
 		const shared_handle_t &stream_switch_event,
 		const shared_handle_t &stream_switch_complete_event,
+		const shared_handle_t &volume_event,
 		const std::shared_ptr<std::atomic<bool>> &switching_streams
 	):
 		stream_switch_event(stream_switch_event),
 		stream_switch_complete_event(stream_switch_complete_event),
+		volume_event(volume_event),
 		switching_streams(switching_streams){}
+	float get_volume(){
+		return this->volume;
+	}
 	virtual ~SessionNotifier(){}
 	STDMETHOD(OnDisplayNameChanged)(LPCWSTR NewDisplayName, LPCGUID EventContext){
 		return S_OK;
@@ -590,6 +627,8 @@ public:
 		return S_OK;
 	}
     STDMETHOD(OnSimpleVolumeChanged)(float NewSimpleVolume, BOOL NewMute, LPCGUID EventContext){
+		this->volume = NewSimpleVolume;
+		SetEvent(this->volume_event.get());
 		return S_OK;
 	}
 	STDMETHOD(OnChannelVolumeChanged)(DWORD ChannelCount, float NewChannelVolumes[], DWORD ChangedChannel, LPCGUID EventContext){
@@ -682,26 +721,28 @@ public:
 	}
 };
 
-void DefaultWasapiOutputDevice::initialize_stream_switching(){
+void SpecificWasapiOutputDevice::initialize_stream_switching(){
     IAudioSessionControl *audio_session_control_ptr;
 	auto result = this->audio_client->GetService(IID_PPV_ARGS(&audio_session_control_ptr));
 	if (!SUCCEEDED(result))
 		throw std::runtime_error("Failed to get audio session control: " + to_string(result));
 	this->session_control.reset(audio_session_control_ptr);
 
-	this->notifier.reset(new SessionNotifier(
-		this->stream_switch_event,
-		this->stream_switch_complete_event,
-		this->switching_streams
-	));
+	if (!this->notifier){
+		this->notifier.reset(new SessionNotifier(
+			this->stream_switch_event,
+			this->stream_switch_complete_event,
+			this->volume_event,
+			this->switching_streams
+		));
 
-	this->notifier->AddRef();
+		this->notifier->AddRef();
 
+		result = this->enumerator->RegisterEndpointNotificationCallback(this->notifier.get());
+		if (!SUCCEEDED(result))
+			throw std::runtime_error("Failed to get register session notification: " + to_string(result));
+	}
 	result = this->session_control->RegisterAudioSessionNotification(this->notifier.get());
-	if (!SUCCEEDED(result))
-		throw std::runtime_error("Failed to get register session notification: " + to_string(result));
-	
-	result = this->enumerator->RegisterEndpointNotificationCallback(this->notifier.get());
 	if (!SUCCEEDED(result))
 		throw std::runtime_error("Failed to get register session notification: " + to_string(result));
 }
@@ -721,6 +762,7 @@ bool DefaultWasapiOutputDevice::switch_streams(){
 		//if (!SUCCEEDED(result))
 		//	return false;
 		this->session_control.reset();
+		this->volume.reset();
 		this->render_client.reset();
 		this->audio_client.reset();
 		this->device.reset();
@@ -754,4 +796,15 @@ bool DefaultWasapiOutputDevice::switch_streams(){
 	}catch (std::exception &){
 		return false;
 	}
+}
+
+void SpecificWasapiOutputDevice::volume_changed(){
+	auto rational = to_RationalValue(this->notifier->get_volume());
+	if (this->callback.volume_changed)
+		this->callback.volume_changed(this->callback.cb_data, rational);
+	
+}
+
+void SpecificWasapiOutputDevice::set_volume(const rational_t &rational){
+	this->volume->SetMasterVolume((float)to_double(rational), nullptr);
 }

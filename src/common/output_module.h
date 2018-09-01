@@ -11,8 +11,12 @@ typedef void *OutputPtr;
 typedef void *OutputDevicePtr;
 
 typedef struct{
-	const char *name;
 	uint8_t unique_id[32];
+} UniqueID;
+
+typedef struct{
+	const char *name;
+	UniqueID unique_id;
 } OutputDeviceListItem;
 
 typedef struct{
@@ -54,7 +58,7 @@ typedef size_t (*AudioCallback)(void *cb_data, void *dst, size_t size, size_t sa
 
 typedef void (*AudioFormatChangedCallback)(void *cb_data, const AudioFormat *af);
 
-typedef void (*AudioVolumeChangedCallback)(void *cb_data, double);
+typedef void (*AudioVolumeChangedCallback)(void *cb_data, RationalValue);
 
 typedef struct{
 	void *cb_data;
@@ -68,10 +72,10 @@ typedef struct{
 typedef OutputDeviceList *(*output_get_device_list_f)(ModulePtr);
 
 //output_get_supported_formats (required)
-typedef AudioFormat *(*output_get_supported_formats_f)(ModulePtr, size_t index);
+typedef AudioFormat *(*output_get_supported_formats_f)(ModulePtr, const UniqueID *unique_id);
 
 //output_open_device (required)
-typedef OutputDevicePtr (*output_open_device_f)(ModulePtr, size_t index, size_t format_index, const AudioCallbackData *callback);
+typedef OutputDevicePtr (*output_open_device_f)(ModulePtr, const UniqueID *unique_id, size_t format_index, const AudioCallbackData *callback);
 
 //output_device_close (required)
 typedef void (*output_device_close_f)(OutputDevicePtr);
@@ -92,3 +96,5 @@ typedef void (*output_device_flush_f)(OutputDevicePtr);
 //data to the buffer.
 typedef void (*output_device_pause_f)(OutputDevicePtr, int pause_active);
 
+//output_device_set_volume (optional)
+typedef void (*output_device_set_volume_f)(OutputDevicePtr, RationalValue volume);

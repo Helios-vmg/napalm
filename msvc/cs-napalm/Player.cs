@@ -21,6 +21,7 @@ namespace cs_napalm
             TrackChanged,
             SeekComplete,
             PlaylistUpdated,
+	        VolumeChangedBySystem,
         }
 
         public delegate void OnNotification(Notification notification);
@@ -43,6 +44,7 @@ namespace cs_napalm
             public IntPtr param4;
         }
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void OnNotificationPrivate(IntPtr data, ref PrivateNotification notification);
 
         private struct Callbacks
@@ -73,6 +75,7 @@ namespace cs_napalm
             public NumericTrackInfo numeric_track_info;
         }
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void ReleaseFunction(IntPtr p);
 
         private struct OutputDeviceList
@@ -130,6 +133,27 @@ namespace cs_napalm
             }
         }
 
+        private struct PrivateLevel
+        {
+            public sbyte level_count;
+            public float level_00;
+            public float level_01;
+            public float level_02;
+            public float level_03;
+            public float level_04;
+            public float level_05;
+            public float level_06;
+            public float level_07;
+            public float level_08;
+            public float level_09;
+            public float level_10;
+            public float level_11;
+            public float level_12;
+            public float level_13;
+            public float level_14;
+            public float level_15;
+        }
+
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr create_player();
 
@@ -155,7 +179,7 @@ namespace cs_napalm
         private static extern void next(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern RationalStruct get_current_time(IntPtr player);
+        private static extern void get_current_time(IntPtr player, ref RationalStruct time, ref PrivateLevel level);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern void set_callbacks(IntPtr player, ref Callbacks callbacks);
@@ -186,6 +210,9 @@ namespace cs_napalm
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
         private static extern void select_output(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] dst);
+
+        [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void set_volume(IntPtr player, double volume);
 
         private IntPtr _player;
 
@@ -252,8 +279,42 @@ namespace cs_napalm
 
         public Rational GetCurrentTime()
         {
-            var time = get_current_time(_player);
-            return ToRational(time);
+            Rational time;
+            float[] levels;
+            GetCurrentTime(out time, out levels);
+            return time;
+        }
+        public void GetCurrentTime(out Rational time, out float[] levels)
+        {
+            var rs = new RationalStruct();
+            var pl = new PrivateLevel();
+            get_current_time(_player, ref rs, ref pl);
+            time = ToRational(rs);
+            if (pl.level_count == 0)
+                levels = null;
+            else
+            {
+                levels = new float[pl.level_count];
+                var temp = new float[16];
+                temp[0] = pl.level_00;
+                temp[1] = pl.level_01;
+                temp[2] = pl.level_02;
+                temp[3] = pl.level_03;
+                temp[4] = pl.level_04;
+                temp[5] = pl.level_05;
+                temp[6] = pl.level_06;
+                temp[7] = pl.level_07;
+                temp[8] = pl.level_08;
+                temp[9] = pl.level_09;
+                temp[10] = pl.level_10;
+                temp[11] = pl.level_11;
+                temp[12] = pl.level_12;
+                temp[13] = pl.level_13;
+                temp[14] = pl.level_14;
+                temp[15] = pl.level_15;
+                for (int i = 0; i < pl.level_count; i++)
+                    levels[i] = temp[i];
+            }
         }
 
         private OnNotificationPrivate _onNotification;
@@ -270,7 +331,7 @@ namespace cs_napalm
                 Param4 = pn.param4,
             };
         }
-
+        
         public void SetCallbacks(OnNotification on)
         {
             Callbacks callbacks;
@@ -352,14 +413,18 @@ namespace cs_napalm
             }
         }
 
+        private static RationalStruct ToRationalStruct(Rational q)
+        {
+            return new RationalStruct
+            {
+                numerator = q.Numerator,
+                denominator = q.Denominator,
+            };
+        }
+
         public void Seek(Rational time)
         {
-            var rs = new RationalStruct
-            {
-                numerator = time.Numerator,
-                denominator = time.Denominator,
-            };
-            seek_to_time(_player, rs);
+            seek_to_time(_player, ToRationalStruct(time));
         }
 
         public byte[] GetFrontCover(int position)
@@ -452,6 +517,11 @@ namespace cs_napalm
         public void SelectOutput(byte[] uniqueId)
         {
             select_output(_player, uniqueId);
+        }
+
+        public void SetVolume(double volume)
+        {
+            set_volume(_player, volume);
         }
     }
 }

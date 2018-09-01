@@ -24,6 +24,6 @@ public:
 	void add(const std::string &name, const std::uint8_t (&unique_id)[sizeof(OutputDeviceListItem().unique_id)]){
 		this->display_names.push_back(name);
 		this->devices.push_back({});
-		memcpy(this->devices.back().unique_id, unique_id, sizeof(unique_id));
+		memcpy(this->devices.back().unique_id.unique_id, unique_id, sizeof(unique_id));
 	}
 };

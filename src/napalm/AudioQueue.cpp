@@ -47,7 +47,7 @@ bool AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std:
 	return ret;
 }
 
-size_t AudioQueue::pop_buffer(rational_t &time, AudioQueueFlags &flags, void *void_dst, size_t size, size_t samples_queued){
+size_t AudioQueue::pop_buffer(AudioTime &atime, AudioQueueFlags &flags, void *void_dst, size_t size, size_t samples_queued){
 	size_t ret = 0;
 	bool signal = false;
 	bool time_set = false;
@@ -60,8 +60,9 @@ size_t AudioQueue::pop_buffer(rational_t &time, AudioQueueFlags &flags, void *vo
 				break;
 			auto &extra = get_extra_data<BufferExtraData>(this->head);
 			if (!time_set){
-				time = rational_t(extra.timestamp.numerator, extra.timestamp.denominator);
-				time += rational_t(extra.sample_offset, this->format->freq);
+				atime.time = rational_t(extra.timestamp.numerator, extra.timestamp.denominator);
+				atime.time += rational_t(extra.sample_offset, this->format->freq);
+				atime.stream_id = extra.stream_id;
 				time_set = true;
 			}
 			if (extra.stream_id != this->current_stream_id){
@@ -93,8 +94,10 @@ size_t AudioQueue::pop_buffer(rational_t &time, AudioQueueFlags &flags, void *vo
 	}
 	if (signal || !ret)
 		this->event.signal();
-	if (!time_set)
-		time = rational_t(-1, 1);
+	if (!time_set){
+		atime.time = rational_t(-1, 1);
+		atime.stream_id = std::numeric_limits<std::uint64_t>::max();
+	}
 	return ret;
 }
 

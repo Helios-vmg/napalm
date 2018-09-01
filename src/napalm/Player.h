@@ -8,9 +8,11 @@
 #include "CircularQueue.h"
 #include "BasicTrackInfo.h"
 #include "OutputDeviceList.h"
+#include "LevelQueue.h"
 #include <memory>
 #include <mutex>
 #include <cstdint>
+#include <limits>
 
 class Player;
 
@@ -26,6 +28,7 @@ enum class NotificationType : std::int32_t{
 	TrackChanged,
 	SeekComplete,
 	PlaylistUpdated,
+	VolumeChangedBySystem,
 };
 
 struct Notification{
@@ -49,8 +52,8 @@ struct Notification{
 };
 
 struct Callbacks{
-	void *cb_data = nullptr;
-	void (*on_notification)(void *, const Notification *) = nullptr;
+	void *cb_data;
+	void (*on_notification)(void *, const Notification *);
 };
 
 class Player{
@@ -65,15 +68,17 @@ class Player{
 	std::atomic<Status> status = Status::Stopped;
 	Playlist playlist;
 	std::thread decoding_thread;
-	rational_t current_time = {0, 1};
+	rational_t current_time = {-1, 1};
+	static const std::uint64_t unset_current_stream_id = std::numeric_limits<std::uint64_t>::max();
+	std::uint64_t current_stream_id = unset_current_stream_id;
 	std::mutex callbacks_mutex;
-	Callbacks callbacks;
+	Callbacks callbacks = {nullptr, nullptr};
 	std::thread async_notifications_thread;
 	ThreadSafeCircularQueue<Notification> notification_queue;
 	std::atomic<bool> executing_seek = false;
+	std::map<std::uint64_t, std::shared_ptr<LevelQueue>> level_queues;
 	
 	void load_plugins();
-	void open_output();
 	void audio_format_changed(const AudioFormat &af);
 	void decoding_function();
 	void async_notifications_function();
@@ -87,7 +92,7 @@ public:
 	void stop();
 	void next();
 	void previous();
-	rational_t get_current_position();
+	void get_current_position(rational_t &time, LevelQueue::Level &level);
 	void set_callbacks(const Callbacks &);
 	void get_playlist_state(size_t &size, size_t &position);
 	BasicTrackInfo get_basic_track_info(size_t playlist_position);
@@ -97,4 +102,5 @@ public:
 	OutputDeviceList get_outputs();
 	uniqueid_t get_selected_output();
 	void select_output(const uniqueid_t &dst);
+	void set_volume(double);
 };

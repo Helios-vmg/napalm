@@ -180,7 +180,7 @@ nasm "%(FullPath)" -d OBJ_FORMAT_win32 -f win64 -o "$(IntDir)%(Filename).obj"</C
       <PreprocessorDefinitions>_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;FLAC__HAS_OGG;FLAC__HAS_NASM;FLAC__CPU_IA32;FLAC__HAS_X86INTRIN;FLAC__ALIGN_MALLOC_DATA;PACKAGE_VERSION="1.3.2";FLAC__NO_DLL;FLAC__OVERFLOW_DETECT;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\src\libFLAC\include\;$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -197,7 +197,7 @@ nasm "%(FullPath)" -d OBJ_FORMAT_win32 -f win64 -o "$(IntDir)%(Filename).obj"</C
       <PreprocessorDefinitions>_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;FLAC__HAS_OGG;FLAC__HAS_X86INTRIN;FLAC__ALIGN_MALLOC_DATA;PACKAGE_VERSION="1.3.2";FLAC__NO_DLL;FLAC__OVERFLOW_DETECT;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\src\libFLAC\include\;$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -216,7 +216,7 @@ nasm "%(FullPath)" -d OBJ_FORMAT_win32 -f win64 -o "$(IntDir)%(Filename).obj"</C
       <PreprocessorDefinitions>_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;FLAC__HAS_OGG;FLAC__HAS_NASM;FLAC__CPU_IA32;FLAC__HAS_X86INTRIN;FLAC__ALIGN_MALLOC_DATA;PACKAGE_VERSION="1.3.2";FLAC__NO_DLL;FLAC__LPC_UNROLLED_FILTER_LOOPS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\src\libFLAC\include\;$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -237,7 +237,7 @@ nasm "%(FullPath)" -d OBJ_FORMAT_win32 -f win64 -o "$(IntDir)%(Filename).obj"</C
       <PreprocessorDefinitions>_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;FLAC__HAS_OGG;FLAC__HAS_X86INTRIN;FLAC__ALIGN_MALLOC_DATA;PACKAGE_VERSION="1.3.2";FLAC__NO_DLL;FLAC__LPC_UNROLLED_FILTER_LOOPS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\flac-1.3.2\src\libFLAC\include\;$(SolutionDir)dependencies\sources\flac-1.3.2\include\;$(SolutionDir)dependencies\sources\libogg-1.3.3\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

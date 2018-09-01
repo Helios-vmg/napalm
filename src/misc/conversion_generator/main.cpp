@@ -443,7 +443,7 @@ int main(){
 				"template <>\n"
 				"struct converter<" << to_string(i) << ", " << to_string(i) << ">{\n"
 				"\tstatic " << to_type(intermediate_type(i)) << " f(" << to_type(intermediate_type(i)) << " x){\n"
-				"\t\treturn 0;\n"
+				"\t\treturn x;\n"
 				"\t}\n"
 				"};\n"
 				"\n"

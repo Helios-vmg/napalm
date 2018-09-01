@@ -48,7 +48,7 @@ public:
 		this->items.resize(1);
 		auto &back = this->items.back();
 		back.name = this->strings.back().c_str();
-		memcpy(back.unique_id, device.get_hash().data(), sizeof(back.unique_id));
+		memcpy(back.unique_id.unique_id, device.get_hash().data(), sizeof(back.unique_id.unique_id));
 		
 		this->odl.opaque = this;
 		this->odl.release_function = release;
@@ -65,14 +65,11 @@ OutputDeviceList *NullOutput::get_device_list(){
 	return list->get_list();
 }
 
-AudioFormat *NullOutput::get_supported_formats(size_t index){
+AudioFormat *NullOutput::get_supported_formats(const UniqueID &unique_id){
 	return this->device.get_supported_formats();
 }
 
-OutputDevice *NullOutput::open_device(size_t index, size_t format_index, const AudioCallbackData &callback){
-	if (index > 0)
-		throw std::runtime_error("Invalid device index.");
-
+OutputDevice *NullOutput::open_device(const UniqueID &unique_id, size_t format_index, const AudioCallbackData &callback){
 	this->device.open(format_index, callback);
 	return &this->device;
 }
@@ -81,7 +78,8 @@ NullDevice::NullDevice(NullOutput &parent): parent(&parent){
 	SHA256 hash;
 	hash.input(this->name);
 	this->hash = hash.result();
-	this->format = {IntS16, 2, 44100};
+	this->formats[0] = {IntS16, 2, 44100};
+	this->formats[1] = {Invalid, 0, 0};
 }
 
 NullDevice::~NullDevice(){
@@ -108,7 +106,7 @@ void NullDevice::open(size_t format_index, const AudioCallbackData &callback){
 void NullDevice::thread_func(){
 	auto initial = std::chrono::high_resolution_clock::now();
 	std::uint64_t samples_read = 0;
-	auto bytes_per_sample = sizeof_NumberFormat(this->format.format) * this->format.channels;
+	auto bytes_per_sample = sizeof_NumberFormat(this->formats[0].format) * this->formats[0].channels;
 	std::vector<char> bitbucket;
 	while (this->run){
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -127,5 +125,5 @@ void NullDevice::thread_func(){
 }
 
 AudioFormat *NullDevice::get_supported_formats(){
-	return &this->format;
+	return this->formats;
 }

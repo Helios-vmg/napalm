@@ -96,7 +96,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>BUILDING_NAPALM;WIN32;_DEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include\;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -113,7 +113,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>BUILDING_NAPALM;_DEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)include\;$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -132,7 +132,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>BUILDING_NAPALM;WIN32;NDEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -154,7 +154,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>BUILDING_NAPALM;NDEBUG;_WINDOWS;_USRDLL;NAPALM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)dependencies\sources\libsamplerate-0.1.9\src\;$(SolutionDir)src\common\</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -182,6 +182,7 @@
     <ClInclude Include="..\..\src\napalm\Decoder.h" />
     <ClInclude Include="..\..\src\napalm\Filter.h" />
     <ClInclude Include="..\..\src\napalm\InputStream.h" />
+    <ClInclude Include="..\..\src\napalm\LevelQueue.h" />
     <ClInclude Include="..\..\src\napalm\MetadataModule.h" />
     <ClInclude Include="..\..\src\napalm\Module.h" />
     <ClInclude Include="..\..\src\napalm\CircularQueue.h" />
@@ -198,6 +199,7 @@
     <ClCompile Include="..\..\src\napalm\ChannelMixerFilter.cpp" />
     <ClCompile Include="..\..\src\napalm\Filter.cpp" />
     <ClCompile Include="..\..\src\napalm\InputStream.cpp" />
+    <ClCompile Include="..\..\src\napalm\LevelQueue.cpp" />
     <ClCompile Include="..\..\src\napalm\main.cpp" />
     <ClCompile Include="..\..\src\napalm\MetadataModule.cpp" />
     <ClCompile Include="..\..\src\napalm\Module.cpp" />
