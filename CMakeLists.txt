@@ -168,6 +168,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 add_library(portaudio STATIC ${PORTAUDIO_OUTPUT_SOURCES})
 
+if (CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(portaudio PRIVATE "-w")
+endif()
+
 #-------------------------------------------------------------------------------
 
 project (oggdecoder)
