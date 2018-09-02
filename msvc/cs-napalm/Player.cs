@@ -155,70 +155,70 @@ namespace cs_napalm
         }
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr create_player();
+        private static extern IntPtr napalm_create_player();
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void destroy_player(IntPtr player);
+        private static extern void napalm_destroy_player(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int load_file(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] path);
+        private static extern int napalm_load_file(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] path);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void play(IntPtr player);
+        private static extern void napalm_play(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void pause(IntPtr player);
+        private static extern void napalm_pause(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void stop(IntPtr player);
+        private static extern void napalm_stop(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void previous(IntPtr player);
+        private static extern void napalm_previous(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void next(IntPtr player);
+        private static extern void napalm_next(IntPtr player);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void get_current_time(IntPtr player, ref RationalStruct time, ref PrivateLevel level);
+        private static extern void napalm_get_current_time(IntPtr player, ref RationalStruct time, ref PrivateLevel level);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void set_callbacks(IntPtr player, ref Callbacks callbacks);
+        private static extern void napalm_set_callbacks(IntPtr player, ref Callbacks callbacks);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void get_playlist_state(IntPtr player, out int size, out int position);
+        private static extern void napalm_get_playlist_state(IntPtr player, out int size, out int position);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr get_basic_track_info(IntPtr player, int playlist_position);
+        private static extern IntPtr napalm_get_basic_track_info(IntPtr player, int playlist_position);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void release_basic_track_info(IntPtr info);
+        private static extern void napalm_release_basic_track_info(IntPtr info);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void seek_to_time(IntPtr player, RationalStruct time);
+        private static extern void napalm_seek_to_time(IntPtr player, RationalStruct time);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr get_front_cover(IntPtr player, int playlist_position, ref int data_size);
+        private static extern IntPtr napalm_get_front_cover(IntPtr player, int playlist_position, ref int data_size);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void release_front_cover(IntPtr player, IntPtr buffer);
+        private static extern void napalm_release_front_cover(IntPtr player, IntPtr buffer);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void get_outputs(IntPtr player, ref OutputDeviceList dst);
+        private static extern void napalm_get_outputs(IntPtr player, ref OutputDeviceList dst);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void get_selected_output(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] dst);
+        private static extern void napalm_get_selected_output(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] dst);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void select_output(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] dst);
+        private static extern void napalm_select_output(IntPtr player, [MarshalAs(UnmanagedType.LPArray)] byte[] dst);
 
         [DllImport("napalm", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void set_volume(IntPtr player, double volume);
+        private static extern void napalm_set_volume(IntPtr player, double volume);
 
         private IntPtr _player;
 
         public Player()
         {
-            _player = create_player();
+            _player = napalm_create_player();
             if (_player == IntPtr.Zero)
                 throw new Exception("Failed to create player.");
         }
@@ -227,7 +227,7 @@ namespace cs_napalm
         {
             if (_player != IntPtr.Zero)
             {
-                destroy_player(_player);
+                napalm_destroy_player(_player);
                 _player = IntPtr.Zero;
             }
             ReleaseHandle(ref _onNotificationHandle);
@@ -244,32 +244,32 @@ namespace cs_napalm
             var tempList = Encoding.UTF8.GetBytes(path).ToList();
             tempList.Add(0);
             var array = tempList.ToArray();
-            return load_file(_player, array) != 0;
+            return napalm_load_file(_player, array) != 0;
         }
 
         public void Play()
         {
-            play(_player);
+            napalm_play(_player);
         }
 
         public void Pause()
         {
-            pause(_player);
+            napalm_pause(_player);
         }
 
         public void Stop()
         {
-            stop(_player);
+            napalm_stop(_player);
         }
 
         public void PreviousTrack()
         {
-            previous(_player);
+            napalm_previous(_player);
         }
 
         public void NextTrack()
         {
-            next(_player);
+            napalm_next(_player);
         }
 
         private static Rational ToRational(RationalStruct r)
@@ -288,7 +288,7 @@ namespace cs_napalm
         {
             var rs = new RationalStruct();
             var pl = new PrivateLevel();
-            get_current_time(_player, ref rs, ref pl);
+            napalm_get_current_time(_player, ref rs, ref pl);
             time = ToRational(rs);
             if (pl.level_count == 0)
                 levels = null;
@@ -344,7 +344,7 @@ namespace cs_napalm
             _onNotificationHandle = GCHandle.ToIntPtr(GCHandle.Alloc(_onNotification));
             callbacks.on_notification = _onNotification;
 
-            set_callbacks(_player, ref callbacks);
+            napalm_set_callbacks(_player, ref callbacks);
 
             ReleaseGcHandle(oldOnNotificationHandle);
         }
@@ -364,7 +364,7 @@ namespace cs_napalm
         public PlaylistState GetPlaylistState()
         {
             int size, position;
-            get_playlist_state(_player, out size, out position);
+            napalm_get_playlist_state(_player, out size, out position);
             return new PlaylistState
             {
                 Size = size,
@@ -384,7 +384,7 @@ namespace cs_napalm
         
         public BasicTrackInfo GetBasicTrackInfo(int position)
         {
-            var ptr = get_basic_track_info(_player, position);
+            var ptr = napalm_get_basic_track_info(_player, position);
             if (ptr == IntPtr.Zero)
                 return null;
             try
@@ -409,7 +409,7 @@ namespace cs_napalm
             }
             finally
             {
-                release_basic_track_info(ptr);
+                napalm_release_basic_track_info(ptr);
             }
         }
 
@@ -424,13 +424,13 @@ namespace cs_napalm
 
         public void Seek(Rational time)
         {
-            seek_to_time(_player, ToRationalStruct(time));
+            napalm_seek_to_time(_player, ToRationalStruct(time));
         }
 
         public byte[] GetFrontCover(int position)
         {
             int size = 0;
-            var buffer = get_front_cover(_player, position, ref size);
+            var buffer = napalm_get_front_cover(_player, position, ref size);
             if (buffer == IntPtr.Zero)
                 return null;
             try
@@ -441,7 +441,7 @@ namespace cs_napalm
             }
             finally
             {
-                release_front_cover(_player, buffer);
+                napalm_release_front_cover(_player, buffer);
             }
         }
 
@@ -449,7 +449,7 @@ namespace cs_napalm
         {
             var ret = new List<OutputDevice>();
             var outputs = new OutputDeviceList();
-            get_outputs(_player, ref outputs);
+            napalm_get_outputs(_player, ref outputs);
             if (outputs.release_function == null)
                 return ret;
             try
@@ -510,18 +510,18 @@ namespace cs_napalm
         public byte[] GetSelectedOutput()
         {
             var ret = new byte[32];
-            get_selected_output(_player, ret);
+            napalm_get_selected_output(_player, ret);
             return ret;
         }
 
         public void SelectOutput(byte[] uniqueId)
         {
-            select_output(_player, uniqueId);
+            napalm_select_output(_player, uniqueId);
         }
 
         public void SetVolume(double volume)
         {
-            set_volume(_player, volume);
+            napalm_set_volume(_player, volume);
         }
     }
 }

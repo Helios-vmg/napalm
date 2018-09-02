@@ -20,7 +20,7 @@ protected:
 	std::unique_ptr<BufferSource> source;
 public:
 	FilterSource(std::unique_ptr<BufferSource> &&source): source(std::move(source)){}
-	virtual ~FilterSource() = 0{}
+	virtual ~FilterSource() = 0;
 	std::unique_ptr<BufferSource> unroll_chain() override{
 		auto temp = this->source->unroll_chain();
 		if (!temp)

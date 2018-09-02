@@ -1,7 +1,7 @@
 #include "InputStream.h"
 #include <stdexcept>
 #include <sstream>
-#include "../common/utf8.hpp"
+#include <utf8.hpp>
 
 static void bad_whence(int whence){
 	std::stringstream stream;
@@ -44,8 +44,6 @@ std::int64_t StdInputStream::seek(std::int64_t offset, int whence){
 	if (!this->file)
 		this->file.clear();
 	std::int64_t ret = this->file.tellg();
-	if (whence == SEEK_SET && ret != offset)
-		__debugbreak();
 	return ret;
 }
 

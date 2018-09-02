@@ -8,6 +8,7 @@
 #include <map>
 
 typedef basic_uniqueid_t<uintptr_t, sizeof(OutputDeviceListItem().unique_id)> uniqueid_t;
+class OutputDevice;
 
 class OutputModule{
 	friend class OutputDevice;

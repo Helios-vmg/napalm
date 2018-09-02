@@ -3,30 +3,44 @@
 #include <functional>
 #include <boost/dll.hpp>
 #include <RationalValue.h>
+#include <iostream>
 
 typedef void *PlayerPtr;
 
+typedef struct{
+	uint8_t unique_id[32];
+} UniqueID;
+
+typedef struct{
+	const char *name;
+	UniqueID unique_id;
+} OutputDeviceListItem;
+
+typedef struct{
+	void *opaque;
+	void (*release_function)(void *);
+	size_t length;
+	OutputDeviceListItem *items;
+} OutputDeviceList;
+
+struct Level{
+	char level_count;
+	float levels[16];
+};
+
 extern "C"{
-	typedef PlayerPtr (*create_player_f)();
-	typedef void(*destroy_player_f)(PlayerPtr player);
-	typedef int (*load_file_f)(PlayerPtr player, const char *path);
-	typedef void (*play_f)(PlayerPtr player);
-	typedef void (*pause_f)(PlayerPtr player);
-	typedef void (*stop_f)(PlayerPtr player);
-	typedef RationalValue (*get_current_time_f)(PlayerPtr player);
+	typedef PlayerPtr (*napalm_create_player_f)();
+	typedef void(*napalm_destroy_player_f)(PlayerPtr player);
+	typedef int (*napalm_load_file_f)(PlayerPtr player, const char *path);
+	typedef void (*napalm_play_f)(PlayerPtr player);
+	typedef void (*napalm_pause_f)(PlayerPtr player);
+	typedef void (*napalm_stop_f)(PlayerPtr player);
+	typedef void (*napalm_get_current_time_f)(PlayerPtr player, RationalValue *time, Level *level);
+	typedef void (*napalm_get_outputs_f)(PlayerPtr player, OutputDeviceList *dst);
+	typedef void (*napalm_select_output_f)(PlayerPtr player, const std::uint8_t *dst);
 }
 
-#if defined _WIN32 || defined _WIN64
-#if defined _M_IX86 || defined _X86_ || defined __X86__
 static const wchar_t * const library_name = L"napalm";
-#elif defined _M_X64 || defined _M_AMD64 || defined __amd64__ || defined __amd64 || defined __x86_64__ || defined __x86_64
-static const wchar_t * const library_name = L"napalm";
-#else
-#error
-#endif
-#else
-#error
-#endif
 
 #define DECLARE_FUNC(x) x##_f fp_##x
 #define GET_FUNCTION(x) function_name = #x; \
@@ -87,27 +101,32 @@ std::string absolute_format_time(const rational_t &time){
 
 class Player::Pimpl{
 	boost::dll::shared_library module;
-	DECLARE_FUNC(create_player);
-	DECLARE_FUNC(destroy_player);
-	DECLARE_FUNC(load_file);
-	DECLARE_FUNC(play);
-	DECLARE_FUNC(pause);
-	DECLARE_FUNC(stop);
-	DECLARE_FUNC(get_current_time);
+	DECLARE_FUNC(napalm_create_player);
+	DECLARE_FUNC(napalm_destroy_player);
+	DECLARE_FUNC(napalm_load_file);
+	DECLARE_FUNC(napalm_play);
+	DECLARE_FUNC(napalm_pause);
+	DECLARE_FUNC(napalm_stop);
+	DECLARE_FUNC(napalm_get_current_time);
+	DECLARE_FUNC(napalm_get_outputs);
+	DECLARE_FUNC(napalm_select_output);
 	PlayerPtr player;
 
 	void init(){
 		this->module = boost::dll::shared_library(library_name, boost::dll::load_mode::append_decorations);
+		std::cout << "Loaded.\n";
 
 		const char *function_name = nullptr;
 		try{
-			GET_FUNCTION(create_player);
-			GET_FUNCTION(destroy_player);
-			GET_FUNCTION(load_file);
-			GET_FUNCTION(play);
-			GET_FUNCTION(pause);
-			GET_FUNCTION(stop);
-			GET_FUNCTION(get_current_time);
+			GET_FUNCTION(napalm_create_player);
+			GET_FUNCTION(napalm_destroy_player);
+			GET_FUNCTION(napalm_load_file);
+			GET_FUNCTION(napalm_play);
+			GET_FUNCTION(napalm_pause);
+			GET_FUNCTION(napalm_stop);
+			GET_FUNCTION(napalm_get_current_time);
+			GET_FUNCTION(napalm_get_outputs);
+			GET_FUNCTION(napalm_select_output);
 		}catch (std::exception &){
 			throw std::runtime_error((std::string)"Required function not found: " + function_name);
 		}
@@ -115,31 +134,53 @@ class Player::Pimpl{
 public:
 	Pimpl(){
 		this->init();
-		this->player = this->fp_create_player();
+		this->player = this->fp_napalm_create_player();
 		if (!this->player)
 			throw std::runtime_error("Error initializing player.");
 	}
 	~Pimpl(){
-		this->fp_destroy_player(this->player);
+		this->fp_napalm_destroy_player(this->player);
 	}
 	bool load_file(const std::wstring &path){
 		auto utf8 = string_to_utf8(path);
-		return !!this->fp_load_file(this->player, utf8.c_str());
+		return !!this->fp_napalm_load_file(this->player, utf8.c_str());
 	}
 	bool load_file(const std::string &path){
-		return !!this->fp_load_file(this->player, path.c_str());
+		return !!this->fp_napalm_load_file(this->player, path.c_str());
 	}
 	void play(){
-		this->fp_play(this->player);
+		this->fp_napalm_play(this->player);
 	}
 	void pause(){
-		this->fp_pause(this->player);
+		this->fp_napalm_pause(this->player);
 	}
 	void stop(){
-		this->fp_stop(this->player);
+		this->fp_napalm_stop(this->player);
 	}
 	rational_t current_time(){
-		return to_rational(this->fp_get_current_time(this->player));
+		RationalValue rv;
+		Level l;
+		this->fp_napalm_get_current_time(this->player, &rv, &l);
+		return to_rational(rv);
+	}
+	std::vector<output_device> get_output_devices(){
+		std::vector<output_device> ret;
+		OutputDeviceList outputs;
+		this->fp_napalm_get_outputs(this->player, &outputs);
+		if (!outputs.release_function)
+			return ret;
+		std::unique_ptr<void, void(*)(void *)> p(outputs.opaque, outputs.release_function);
+		ret.reserve(outputs.length);
+		for (size_t i = 0; i < outputs.length; i++){
+			output_device od;
+			od.name = outputs.items[i].name;
+			memcpy(od.unique_id.data(), outputs.items[i].unique_id.unique_id, 32);
+			ret.push_back(od);
+		}
+		return ret;
+	}
+	void open_output_device(const std::uint8_t *unique_id){
+		this->fp_napalm_select_output(this->player, unique_id);
 	}
 };
 
@@ -171,4 +212,12 @@ void Player::stop(){
 
 rational_t Player::current_time(){
 	return this->pimpl->current_time();
+}
+
+std::vector<output_device> Player::get_output_devices(){
+	return this->pimpl->get_output_devices();
+}
+
+void Player::open_output_device(const std::array<std::uint8_t, 32> &id){
+	this->pimpl->open_output_device(id.data());
 }

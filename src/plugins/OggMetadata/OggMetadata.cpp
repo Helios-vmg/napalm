@@ -1,6 +1,7 @@
 #include "OggMetadata.h"
 #include <base64.hpp>
 #include <sstream>
+#include <cmath>
 
 std::string OggMetadata::ALBUM                  = "ALBUM";
 std::string OggMetadata::ARTIST                 = "ARTIST";

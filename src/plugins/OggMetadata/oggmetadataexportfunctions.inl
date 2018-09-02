@@ -1,3 +1,5 @@
+#include <cmath>
+
 void metadata_destroy(MetadataPtr instance){
 	delete (OggMetadataWrapper *)instance;
 }

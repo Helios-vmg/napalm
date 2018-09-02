@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 //Any of the function pointers may be null, in which case the stream doesn't
 //support that operation. Any stream at least supports reading or writing.

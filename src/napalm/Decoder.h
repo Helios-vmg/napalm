@@ -28,6 +28,7 @@ struct BufferExtraData{
 };
 
 class MetadataModule;
+class Decoder;
 
 class DecoderModule{
 	friend class Decoder;

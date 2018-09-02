@@ -2,6 +2,7 @@
 #include <utf8.hpp>
 #include <sha256.hpp>
 #include <sstream>
+#include <vector>
 
 const std::string NullDevice::name = "Null Output Device";
 
@@ -74,7 +75,7 @@ OutputDevice *NullOutput::open_device(const UniqueID &unique_id, size_t format_i
 	return &this->device;
 }
 
-NullDevice::NullDevice(NullOutput &parent): parent(&parent){
+NullDevice::NullDevice(NullOutput &parent): parent(&parent), run(false){
 	SHA256 hash;
 	hash.input(this->name);
 	this->hash = hash.result();

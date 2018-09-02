@@ -2,6 +2,7 @@
 #include <utf8.hpp>
 #include <sha256.hpp>
 #include <sstream>
+#include <vector>
 
 PortAudioOutput::PortAudioOutput(){
 	auto error = Pa_Initialize();
@@ -47,39 +48,60 @@ class PortAudioDeviceList{
 	}
 public:
 	PortAudioDeviceList(){
-		this->device_indices.push_back(Pa_GetDefaultOutputDevice());
-		this->names.push_back("Default output device");
 		auto device_count = Pa_GetDeviceCount();
-		for (PaDeviceIndex i = 0; i < device_count; i++){
-			auto info = Pa_GetDeviceInfo(i);
-			if (info->maxOutputChannels < 1)
-				continue;
+		if (device_count){
+			this->device_indices.push_back(Pa_GetDefaultOutputDevice());
+			this->names.push_back("Default output device");
+			for (PaDeviceIndex i = 0; i < device_count; i++){
+				auto info = Pa_GetDeviceInfo(i);
+				if (info->maxOutputChannels < 1)
+					continue;
 
-			static const NumberFormat formats[] = {
-				Float32,
-				IntS16,
-				IntS24,
-				IntS32,
-				IntS8,
-				IntU8,
-				Invalid,
-			};
-			this->formats.push_back(this->formats_helper.size());
-			AudioFormat format = {Invalid, info->maxOutputChannels, (int)info->defaultSampleRate};
-			for (auto f : formats){
-				auto copy = format;
-				copy.format = f;
-				this->formats_helper.push_back(copy);
+				static const NumberFormat formats[] = {
+					Float32,
+					IntS16,
+					IntS24,
+					IntS32,
+					IntS8,
+					IntU8,
+					Invalid,
+				};
+				this->formats.push_back(this->formats_helper.size());
+				for (auto j = 0; j < info->maxOutputChannels; j++){
+					int channels = 0;
+					switch (j){
+						case 0:
+							channels = std::min(2, info->maxOutputChannels);
+							break;
+						case 1:
+							channels = 1;
+							break;
+						default:
+							channels = j + 1;
+							break;
+					}
+					AudioFormat format = {Invalid, channels, (int)info->defaultSampleRate};
+					for (auto f : formats){
+						auto copy = format;
+						copy.format = f;
+						this->formats_helper.push_back(copy);
+					}
+				}
+				this->device_indices.push_back(i);
+
+				auto host_api = Pa_GetHostApiInfo(info->hostApi);
+				std::string name = info->name;
+				name += " | ";
+				name += host_api->name;
+				this->names.push_back(name);
 			}
-			this->device_indices.push_back(i);
-			auto host_api = Pa_GetHostApiInfo(info->hostApi);
-			std::string name = info->name;
-			name += " | ";
-			name += host_api->name;
-			this->names.push_back(name);
-		}
 
-		this->items.resize(this->names.size());
+			this->items.resize(this->names.size());
+			this->odl.length = this->items.size();
+		}else{
+			this->items.resize(1);
+			this->odl.length = 0;
+		}
 
 		for (size_t i = 0; i < this->names.size(); i++){
 			auto &item = this->items[i];
@@ -94,7 +116,6 @@ public:
 
 		this->odl.opaque = this;
 		this->odl.release_function = release;
-		this->odl.length = this->items.size();
 		this->odl.items = &this->items[0];
 	}
 	OutputDeviceList *get_list(){

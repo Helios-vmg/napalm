@@ -78,7 +78,7 @@ AudioFormat *output_get_supported_formats(ModulePtr instance, const UniqueID *un
 	return nullptr;
 }
 
-#define EXPORT_MODULE_FUNCTION(x) { #x , x }
+#define EXPORT_MODULE_FUNCTION(x) { #x , (GenericFunctionPtr)x }
 
 EXPORT const ModuleExportEntry *GetFunctionTable(ModulePtr){
 	static const ModuleExportEntry ret[] = {

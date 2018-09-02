@@ -65,7 +65,7 @@ class Player{
 	AudioQueue queue;
 	mutex_wrapper<std::recursive_mutex> internal_mutex;
 	mutex_wrapper<std::recursive_mutex> external_mutex;
-	std::atomic<Status> status = Status::Stopped;
+	std::atomic<Status> status;
 	Playlist playlist;
 	std::thread decoding_thread;
 	rational_t current_time = {-1, 1};
@@ -75,7 +75,7 @@ class Player{
 	Callbacks callbacks = {nullptr, nullptr};
 	std::thread async_notifications_thread;
 	ThreadSafeCircularQueue<Notification> notification_queue;
-	std::atomic<bool> executing_seek = false;
+	std::atomic<bool> executing_seek;
 	std::map<std::uint64_t, std::shared_ptr<LevelQueue>> level_queues;
 	
 	void load_plugins();

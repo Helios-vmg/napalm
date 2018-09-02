@@ -18,7 +18,7 @@ protected:
 	std::array<std::uint8_t, 32> hash;
 	AudioFormat formats[2];
 	std::thread thread;
-	std::atomic<bool> run = false;
+	std::atomic<bool> run;
 
 	void thread_func();
 public:

@@ -5,8 +5,14 @@
 #include <RationalValue.h>
 #include <type_traits>
 #include <chrono>
+#include <cmath>
+#include <iostream>
 
-Player::Player(): queue(this->final_format), notification_queue(1024){
+Player::Player():
+		queue(this->final_format),
+		notification_queue(1024),
+		status(Status::Stopped),
+		executing_seek(false){
 	this->async_notifications_thread = std::thread([this](){ this->async_notifications_function(); });
 	this->load_plugins();
 }
@@ -127,9 +133,11 @@ void Player::stop(){
 				this->status = Status::Stopped;
 				break;
 		}
-		this->now_playing->flush();
+		if (this->now_playing)
+			this->now_playing->flush();
 		this->queue.flush_queue();
-		this->output_device->flush();
+		if (this->output_device)
+			this->output_device->flush();
 		this->current_time = {-1, 1};
 	}
 	if (this->decoding_thread.joinable())
@@ -287,6 +295,10 @@ void Player::select_output(const uniqueid_t &dst){
 				auto formats = dev->get_preferred_formats();
 				if (!formats.size())
 					continue;
+				if (this->output_device){
+					this->output_device->close();
+					this->output_device.reset();
+				}
 				dev->open(
 					0,
 					[this](void *dst, size_t size, size_t samples_queued) -> size_t{
@@ -319,11 +331,8 @@ void Player::select_output(const uniqueid_t &dst){
 						this->notification_queue.push(std::move(n));
 					}
 				);
-				if (this->output_device)
-					this->output_device->close();
 				this->output_device = dev;
-				this->final_format = formats.front();
-				this->queue.set_expected_format(this->final_format);
+				this->audio_format_changed(formats.front());
 				return;
 			}catch (std::exception &){}
 		}
@@ -333,10 +342,14 @@ void Player::select_output(const uniqueid_t &dst){
 void Player::set_volume(double volume){
 	if (this->output_device){
 		rational_t q(0, 1);
-		if (isfinite(volume))
+		if (std::isfinite(volume))
 			q = to_rational<std::int64_t, (std::int64_t)1 << 32>(pow(10.0, volume / 20));
 		this->output_device->set_volume(q);
 	}
+}
+
+static float float_abs(float x){
+	return x >= 0 ? x : -x;
 }
 
 static LevelQueue::Level peak_function(const std::vector<LevelQueue::Level> &input){
@@ -346,7 +359,7 @@ static LevelQueue::Level peak_function(const std::vector<LevelQueue::Level> &inp
 	for (auto &l : input){
 		ret.level_count = std::max(ret.level_count, l.level_count);
 		for (int i = 0; i < l.level_count; i++)
-			ret.levels[i] = std::max(ret.levels[i], abs(l.levels[i]));
+			ret.levels[i] = std::max(ret.levels[i], float_abs(l.levels[i]));
 	}
 	return ret;
 }
@@ -473,15 +486,26 @@ void Player::async_notifications_function(){
 	}
 }
 
+#ifdef _WIN32
+static const wchar_t * const dynamic_library_glob = L"*.dll";
+#else
+static const wchar_t * const dynamic_library_glob = L"*.so";
+#endif
+
 void Player::load_plugins(){
 	typedef boost::filesystem::directory_iterator D;
+	if (!boost::filesystem::exists("./plugins"))
+		boost::filesystem::create_directory("./plugins");
 	for (D i("./plugins"), end; i != end; ++i){
 		auto path = i->path().wstring();
-		if (!glob(L"*.dll", path.c_str(), tolower))
+		if (!glob(dynamic_library_glob, path.c_str(), tolower))
 			continue;
+		std::cout << "Loading " << string_to_utf8(path) << std::endl;
 		auto module = Module::load(path);
-		if (!module)
+		if (!module){
+			std::cout << "Not loaded." << std::endl;
 			continue;
+		}
 		if (module->module_supports(DECODER_MODULE_TYPE))
 			this->decoders.emplace_back(std::make_unique<DecoderModule>(module));
 		if (module->module_supports(OUTPUT_MODULE_TYPE))
@@ -496,20 +520,22 @@ void Player::audio_format_changed(const AudioFormat &af){
 
 	this->queue.set_expected_format(af);
 
-	LOCK_MUTEX2(this->internal_mutex, "Player::audio_format_changed()");
-	auto temp = this->now_playing->unroll_chain();
-	if (temp)
-		this->now_playing = std::move(temp);
-	auto extra = this->queue.flush_queue();
-	auto substream = static_cast<DecoderSubstream *>(this->now_playing.get());
-	auto stream_id = substream->get_stream_id();
-	if (stream_id == extra.stream_id){
-		rational_t time(extra.timestamp.numerator, extra.timestamp.denominator);
-		time += rational_t(extra.sample_offset, old_format.freq);
-		substream->seek_to_second(time, false);
-	}
-	auto format = substream->get_audio_format();
-	this->final_format = af;
 	LOCK_MUTEX2(this->external_mutex, "Player::audio_format_changed()");
-	this->now_playing = build_filter_chain(std::move(this->now_playing), format, this->final_format, this->level_queues[stream_id]);
+	LOCK_MUTEX2(this->internal_mutex, "Player::audio_format_changed()");
+	this->final_format = af;
+	if (this->now_playing){
+		auto temp = this->now_playing->unroll_chain();
+		if (temp)
+			this->now_playing = std::move(temp);
+		auto extra = this->queue.flush_queue();
+		auto substream = static_cast<DecoderSubstream *>(this->now_playing.get());
+		auto stream_id = substream->get_stream_id();
+		if (stream_id == extra.stream_id){
+			rational_t time(extra.timestamp.numerator, extra.timestamp.denominator);
+			time += rational_t(extra.sample_offset, old_format.freq);
+			substream->seek_to_second(time, false);
+		}
+		auto format = substream->get_audio_format();
+		this->now_playing = build_filter_chain(std::move(this->now_playing), format, this->final_format, this->level_queues[stream_id]);
+	}
 }

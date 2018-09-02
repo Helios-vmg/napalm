@@ -7,12 +7,21 @@
 #include <cstring>
 #include <utf8.hpp>
 #include <RationalValue.h>
+#include <audio_format.h>
 
 enum NumberFormat;
 typedef boost::rational<std::int64_t> rational_t;
 
 template <typename T>
 using smart_c_struct = std::unique_ptr<T, void(*)(T *)>;
+
+template <typename T, size_t N>
+constexpr size_t array_length(const T (&)[N]){
+	return N;
+}
+
+template <typename T, typename F>
+bool glob(const T *pattern, const T *string, F f);
 
 template <typename T, typename F>
 bool glob_implementation(const T *pattern, const T *string, F f, bool ignore_f){
@@ -40,6 +49,16 @@ glob_start:
 			}
 			return 0;
 	}
+}
+
+template <typename T, typename F>
+bool glob(const T *pattern, const T *string){
+	return glob_implementation(pattern, string, nullptr, true);
+}
+
+template <typename T, typename F>
+bool glob(const T *pattern, const T *string, F f){
+	return glob_implementation(pattern, string, f, false);
 }
 
 template <typename T, size_t N>
@@ -91,21 +110,6 @@ struct basic_uniqueid_t{
 		return true;
 	}
 };
-
-template <typename T, typename F>
-bool glob(const T *pattern, const T *string){
-	return glob_implementation(pattern, string, nullptr, true);
-}
-
-template <typename T, typename F>
-bool glob(const T *pattern, const T *string, F f){
-	return glob_implementation(pattern, string, f, false);
-}
-
-template <typename T, size_t N>
-constexpr size_t array_length(const T (&)[N]){
-	return N;
-}
 
 struct AudioFormat;
 typedef struct AudioFormat AudioFormat;

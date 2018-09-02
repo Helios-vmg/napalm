@@ -161,7 +161,7 @@ ChannelMixerFilter::ChannelMixerFilter(const AudioFormat &af, int target_channel
 	}
 	if (target_channels != 1 && target_channels != 2){
 		std::stringstream stream;
-		stream << "Unsupposed output channels: " << target_channels;
+		stream << "Unsupported output channels: " << target_channels;
 		throw std::runtime_error(stream.str());
 	}
 

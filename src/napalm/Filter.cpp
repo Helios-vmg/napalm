@@ -1,6 +1,8 @@
 #include "Filter.h"
 #include <iostream>
 
+FilterSource::~FilterSource(){}
+
 TrueFilter::TrueFilter(const AudioFormat &af): source_format(af){
 	this->bytes_per_source_sample = this->source_format.channels * sizeof_NumberFormat(this->source_format.format);
 }

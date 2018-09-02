@@ -15,62 +15,7 @@ enum NumberFormat{
 };
 
 #ifdef __cplusplus
-#if 0
-#include <cstdint>
-
-template <NumberFormat F>
-struct NumberFormat_properties{};
-
-template <>
-struct NumberFormat_properties<IntU8>{
-	typedef std::uint8_t type;
-};
-
-template <>
-struct NumberFormat_properties<IntU16>{
-	typedef std::uint16_t type;
-};
-
-template <>
-struct NumberFormat_properties<IntU24>{
-	typedef std::uint32_t type;
-};
-
-template <>
-struct NumberFormat_properties<IntU32>{
-	typedef std::uint32_t type;
-};
-
-template <>
-struct NumberFormat_properties<IntS8>{
-	typedef std::int8_t type;
-};
-
-template <>
-struct NumberFormat_properties<IntS16>{
-	typedef std::int16_t type;
-};
-
-template <>
-struct NumberFormat_properties<IntS24>{
-	typedef std::int32_t type;
-};
-
-template <>
-struct NumberFormat_properties<IntS32>{
-	typedef std::int32_t type;
-};
-
-template <>
-struct NumberFormat_properties<Float32>{
-	typedef float type;
-};
-
-template <>
-struct NumberFormat_properties<Float64>{
-	typedef double type;
-};
-#endif
+#include <cstddef>
 
 inline size_t sizeof_NumberFormat(NumberFormat nf){
 	switch (nf){

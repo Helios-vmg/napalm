@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdint>
 #include <algorithm>
+#include <stdexcept>
+#include <cstdio>
 
 class WrappedExternalIO{
 	ExternalIO io;
