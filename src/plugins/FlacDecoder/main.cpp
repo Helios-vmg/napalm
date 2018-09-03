@@ -176,9 +176,9 @@ MetadataPtr decoder_substream_get_metadata(DecoderSubstreamPtr instance){
 	return nullptr;
 }
 
-#include "../OggMetadata/OggMetadataExportFunctions.inl"
+#include "../OggMetadata/oggmetadataexportfunctions.inl"
 
-#define EXPORT_MODULE_FUNCTION(x) { #x , x }
+#define EXPORT_MODULE_FUNCTION(x) { #x , (GenericFunctionPtr)x }
 #define EXPORT_METADATA_GETTER(x) EXPORT_MODULE_FUNCTION(metadata_get_##x)
 
 EXPORT const ModuleExportEntry *GetFunctionTable(ModulePtr){

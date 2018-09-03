@@ -34,7 +34,7 @@ public:
 	OggMetadata &operator=(OggMetadata &&other) = default;
 	void add_vorbis_comment(const void *, size_t);
 	template <typename F>
-	void iterate(F &f){
+	void iterate(const F &f){
 		for (auto &p : this->map){
 			f(p.first, p.second);
 		}

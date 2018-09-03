@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Decoder.hpp>
+#include <decoder.hpp>
 #include "../OggMetadata/OggMetadata.h"
 
 class FlacDecoder;

@@ -108,6 +108,126 @@ endif()
 
 #-------------------------------------------------------------------------------
 
+project (flac)
+
+file(GLOB FLAC_SOURCES
+	"dependencies/sources/flac-1.3.2/src/libFLAC/bitmath.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/bitreader.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/bitwriter.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/cpu.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/crc.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/fixed.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/fixed_intrin_sse2.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/fixed_intrin_ssse3.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/float.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/format.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/lpc.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/lpc_intrin_avx2.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/lpc_intrin_sse.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/lpc_intrin_sse2.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/lpc_intrin_sse41.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/md5.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/memory.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/metadata_iterators.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/metadata_object.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/ogg_decoder_aspect.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/ogg_encoder_aspect.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/ogg_helper.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/ogg_mapping.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/stream_decoder.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/stream_encoder.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/stream_encoder_framing.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/stream_encoder_intrin_avx2.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/stream_encoder_intrin_sse2.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/stream_encoder_intrin_ssse3.c"
+	"dependencies/sources/flac-1.3.2/src/libFLAC/window.c"
+)
+
+include_directories(
+	dependencies/sources/flac-1.3.2/src/libFLAC/include
+	dependencies/sources/flac-1.3.2/include
+	dependencies/sources/libogg-1.3.3/include
+)
+
+add_definitions(
+	-DHAVE_LROUND
+	-DFLAC__HAS_OGG
+	-DFLAC__ALIGN_MALLOC_DATA
+	-DFLAC__NO_DLL
+	-DFLAC__LPC_UNROLLED_FILTER_LOOPS
+)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_POSITION_INDEPENDENT_CODE True)
+
+add_library(flac STATIC ${FLAC_SOURCES})
+
+if (CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(flac PRIVATE "-w")
+endif()
+
+#-------------------------------------------------------------------------------
+
+project (flacpp)
+
+file(GLOB FLACPP_SOURCES
+	"dependencies/sources/flac-1.3.2/src/libFLAC++/metadata.cpp"
+	"dependencies/sources/flac-1.3.2/src/libFLAC++/stream_decoder.cpp"
+	"dependencies/sources/flac-1.3.2/src/libFLAC++/stream_encoder.cpp"
+)
+
+include_directories(
+	dependencies/sources/flac-1.3.2/include
+)
+
+add_definitions(
+	-DFLAC__NO_DLL
+)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_POSITION_INDEPENDENT_CODE True)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library(flacpp STATIC ${FLACPP_SOURCES})
+
+if (CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(flacpp PRIVATE "-w")
+endif()
+
+#-------------------------------------------------------------------------------
+
+project (cue)
+
+file(GLOB CUE_SOURCES
+	"dependencies/sources/libcue-2.2.1/src/cd.c"
+	"dependencies/sources/libcue-2.2.1/src/cdtext.c"
+	"dependencies/sources/libcue-2.2.1/src/cue_parser.c"
+	"dependencies/sources/libcue-2.2.1/src/cue_scanner.c"
+	"dependencies/sources/libcue-2.2.1/src/rem.c"
+	"dependencies/sources/libcue-2.2.1/src/time.c"
+)
+
+include_directories(
+	dependencies/sources/libcue-2.2.1/include
+)
+
+add_definitions(
+	-DLIBCUE_EXPORTS
+)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_POSITION_INDEPENDENT_CODE True)
+
+add_library(cue STATIC ${CUE_SOURCES})
+
+if (CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(cue PRIVATE "-w")
+endif()
+
+#-------------------------------------------------------------------------------
+
 project (portaudio)
 
 file(GLOB PORTAUDIO_OUTPUT_SOURCES
@@ -176,7 +296,11 @@ endif()
 
 project (oggdecoder)
 
-file(GLOB OGG_DECODER_SOURCES "src/plugins/OggDecoder/*.cpp" "src/plugins/OggMetadata/OggMetadata.cpp")
+file(GLOB OGG_DECODER_SOURCES
+	"src/plugins/OggDecoder/*.cpp"
+	"src/common/base64.cpp"
+	"src/plugins/OggMetadata/OggMetadata.cpp"
+)
 
 include_directories(
 	src/common
@@ -194,9 +318,38 @@ target_link_libraries(oggdecoder vorbisfile vorbis ogg)
 
 #-------------------------------------------------------------------------------
 
+project (flacdecoder)
+
+file(GLOB FLAC_DECODER_SOURCES
+	"src/plugins/FlacDecoder/*.cpp"
+	"src/common/base64.cpp"
+	"src/plugins/OggMetadata/OggMetadata.cpp"
+)
+
+include_directories(
+	src/common
+	dependencies/sources/flac-1.3.2/include
+	dependencies/sources/libogg-1.3.3/include
+	dependencies/sources/libvorbis-1.3.6/include
+	dependencies/sources/libcue-2.2.1/include
+)
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library(flacdecoder MODULE ${FLAC_DECODER_SOURCES})
+target_link_libraries(flacdecoder cue flacpp flac vorbisfile vorbis ogg)
+
+#-------------------------------------------------------------------------------
+
 project (nulloutput)
 
-file(GLOB NULL_OUTPUT_SOURCES "src/plugins/NullOutput/*.cpp" "src/common/sha256.c")
+file(GLOB NULL_OUTPUT_SOURCES
+	"src/plugins/NullOutput/*.cpp"
+	"src/common/sha256.c"
+)
 
 include_directories(src/common)
 

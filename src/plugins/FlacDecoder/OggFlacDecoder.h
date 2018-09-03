@@ -3,7 +3,7 @@
 #include "CircularBuffer.h"
 #include "FlacDecoder.h"
 #include <WrappedExternalIO.hpp>
-#include <Decoder.hpp>
+#include <decoder.hpp>
 #include <memory>
 #include <ogg/ogg.h>
 #include <boost/optional.hpp>

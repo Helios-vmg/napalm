@@ -1,5 +1,6 @@
 #include "CircularBuffer.h"
 #include <algorithm>
+#include <cstring>
 
 void VariableCircularBuffer::copy(const VariableCircularBuffer &other, size_t n){
 	if (!n)
