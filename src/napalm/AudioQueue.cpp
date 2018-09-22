@@ -27,7 +27,7 @@ bool AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std:
 			if (format != this->expected_format || this->next_buffer_index != buffer_index)
 				break;
 			if (this->size < this->limit){
-				this->size += rational_t(buffer->sample_count, this->format->freq);
+				this->size += rational_t(buffer->sample_count, this->expected_format.freq);
 				if (this->tail){
 					NEXT(this->tail) = buffer.get();
 					this->tail = buffer.release();
@@ -54,14 +54,14 @@ size_t AudioQueue::pop_buffer(AudioTime &atime, AudioQueueFlags &flags, void *vo
 	{
 		LOCK_MUTEX(this->mutex, "AudioQueue::pop_buffer()");
 		auto dst = (std::uint8_t *)void_dst;
-		auto sample_size = sizeof_NumberFormat(this->format->format) * this->format->channels;
+		auto sample_size = sizeof_NumberFormat(this->expected_format.format) * this->expected_format.channels;
 		while (size){
 			if (!this->head)
 				break;
 			auto &extra = get_extra_data<BufferExtraData>(this->head);
 			if (!time_set){
 				atime.time = rational_t(extra.timestamp.numerator, extra.timestamp.denominator);
-				atime.time += rational_t(extra.sample_offset, this->format->freq);
+				atime.time += rational_t(extra.sample_offset, this->expected_format.freq);
 				atime.stream_id = extra.stream_id;
 				time_set = true;
 			}
@@ -81,7 +81,7 @@ size_t AudioQueue::pop_buffer(AudioTime &atime, AudioQueueFlags &flags, void *vo
 			size -= copy_size;
 			if (extra.sample_offset >= this->head->sample_count){
 				auto old = this->head;
-				this->size -= rational_t(old->sample_count, this->format->freq);
+				this->size -= rational_t(old->sample_count, this->expected_format.freq);
 				this->head = NEXT(this->head);
 				this->queue_elements--;
 				if (!this->head)

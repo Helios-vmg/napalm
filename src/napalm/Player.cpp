@@ -8,8 +8,24 @@
 #include <cmath>
 #include <iostream>
 
+static float float_abs(float x){
+	return x >= 0 ? x : -x;
+}
+
+static LevelQueue::Level peak_function(const std::vector<LevelQueue::Level> &input){
+	LevelQueue::Level ret;
+	ret.level_count = 0;
+	std::fill(ret.levels, ret.levels + array_length(ret.levels), 0.f);
+	for (auto &l : input){
+		ret.level_count = std::max(ret.level_count, l.level_count);
+		for (int i = 0; i < l.level_count; i++)
+			ret.levels[i] = std::max(ret.levels[i], float_abs(l.levels[i]));
+	}
+	return ret;
+}
+
 Player::Player():
-		queue(this->final_format),
+		now_playing(this->queue),
 		notification_queue(1024),
 		status(Status::Stopped),
 		executing_seek(false){
@@ -22,6 +38,67 @@ Player::~Player(){
 	this->output_device.reset();
 	this->notification_queue.push(NotificationType::Destructing);
 	this->async_notifications_thread.join();
+}
+
+ManagedTrack::~ManagedTrack(){
+	if (this->parent && this->track)
+		this->parent->return_track(std::move(this->track));
+}
+
+void TrackManager::clear(){
+	LOCK_MUTEX(this->mutex);
+	if (!this->valid)
+		return;
+	this->valid = false;
+	this->track.reset();
+}
+
+void TrackManager::set(std::unique_ptr<BufferSource> &&track, const AudioFormat &format){
+	LOCK_MUTEX(this->track_mutex);
+	LOCK_MUTEX(this->mutex);
+	this->track = std::move(track);
+	this->final_format = format;
+	this->valid = true;
+
+}
+
+void TrackManager::change_format(const AudioFormat &af){
+	LOCK_MUTEX(this->track_mutex);
+	LOCK_MUTEX(this->mutex);
+	if (!this->valid)
+		return;
+	auto old_format = this->final_format;
+	if (af == old_format)
+		return;
+	this->queue.set_expected_format(af);
+	this->final_format = af;
+	auto temp = this->track->unroll_chain();
+	if (temp)
+		this->track = std::move(temp);
+	auto extra = this->queue.flush_queue();
+	auto substream = static_cast<DecoderSubstream *>(this->track.get());
+	auto stream_id = substream->get_stream_id();
+	if (stream_id == extra.stream_id){
+		rational_t time(extra.timestamp.numerator, extra.timestamp.denominator);
+		time += rational_t(extra.sample_offset, old_format.freq);
+		substream->seek_to_second(time, false);
+	}
+	auto format = substream->get_audio_format();
+	this->track = build_filter_chain(std::move(this->track), format, this->final_format, this->level_queues[stream_id]);
+	this->final_format = format;
+}
+
+template <typename T>
+std::unique_lock<T> lock(T &mutex){
+	return std::unique_lock<T>(mutex);
+}
+
+ManagedTrack TrackManager::get_track(){
+	return ManagedTrack(*this, std::move(this->track), lock(this->track_mutex), this->final_format, this->level_queues[this->stream_id]);
+}
+
+void TrackManager::return_track(std::unique_ptr<BufferSource> &&track){
+	this->track = std::move(track);
 }
 
 void Player::load_file(const char *path){
@@ -66,7 +143,7 @@ std::shared_ptr<Decoder> Player::internal_load(const std::string &path){
 void Player::play(){
 	if (!this->output_device)
 		return;
-	LOCK_MUTEX2(this->external_mutex, "Player::play()");
+	LOCK_MUTEX(this->mutex);
 	switch (this->status){
 		case Status::Stopped:
 			if (this->decoding_thread.joinable())
@@ -85,29 +162,29 @@ void Player::play(){
 }
 
 void Player::seek(const rational_t &time){
-	LOCK_MUTEX2(this->external_mutex, "Player::seek()");
 	if (!this->now_playing){
 		this->notification_queue.push(NotificationType::SeekComplete);
 		return;
 	}
-	auto &substream = this->now_playing->get_first_source();
+	auto track = this->now_playing.get_track();
+	auto &substream = track->get_first_source();
 	if (substream.seek_to_second(time, false) < 0){
 		this->notification_queue.push(NotificationType::SeekComplete);
 		return;
 	}
 
-	this->now_playing->flush();
+	track->flush();
 	this->queue.flush_queue();
 	this->output_device->flush();
-	auto stream_id = this->now_playing->get_first_source().get_stream_id();
-	auto it = this->level_queues.find(stream_id);
-	if (it != this->level_queues.end())
-		it->second->clear(time);
+	auto stream_id = this->now_playing.get_stream_id();
+	auto lq = this->now_playing.get_level_queue(stream_id);
+	if (lq)
+		lq->clear(time);
 	this->executing_seek = true;
 }
 
 void Player::pause(){
-	LOCK_MUTEX2(this->external_mutex, "Player::pause()");
+	LOCK_MUTEX(this->mutex);
 	switch (this->status){
 		case Status::Stopped:
 			break;
@@ -124,7 +201,7 @@ void Player::pause(){
 
 void Player::stop(){
 	{
-		LOCK_MUTEX2(this->external_mutex, "Player::stop()");
+		LOCK_MUTEX(this->mutex);
 		switch (this->status){
 			case Status::Stopped:
 				return;
@@ -134,7 +211,7 @@ void Player::stop(){
 				break;
 		}
 		if (this->now_playing)
-			this->now_playing->flush();
+			this->now_playing.get_track()->flush();
 		this->queue.flush_queue();
 		if (this->output_device)
 			this->output_device->flush();
@@ -146,45 +223,36 @@ void Player::stop(){
 }
 
 void Player::next(){
-	LOCK_MUTEX2(this->external_mutex, "Player::next()");
+	LOCK_MUTEX(this->mutex);
 	this->playlist.next_track();
-	this->now_playing.reset();
+	this->now_playing.clear();
 	this->queue.flush_queue();
 	this->output_device->flush();
 }
 
 void Player::previous(){
-	LOCK_MUTEX2(this->external_mutex, "Player::previous()");
+	LOCK_MUTEX(this->mutex);
 	this->playlist.previous_track();
-	this->now_playing.reset();
+	this->now_playing.clear();
 	this->queue.flush_queue();
 	this->output_device->flush();
 }
 
 void Player::get_current_position(rational_t &time, LevelQueue::Level &level){
-	LOCK_MUTEX2(this->external_mutex, "Player::get_current_position()");
+	LOCK_MUTEX(this->mutex);
 	time = this->current_time;
-	if (this->current_stream_id != unset_current_stream_id){
-		while (this->level_queues.size()){
-			auto begin = this->level_queues.begin();
-			if (begin->first < this->current_stream_id){
-				this->level_queues.erase(begin);
-				continue;
-			}
-			level = begin->second->get_level(this->current_time);
-			return;
-		}
-	}
 	level.level_count = 0;
+	if (this->current_stream_id != unset_current_stream_id)
+		this->now_playing.get_level(this->current_stream_id, time, level);
 }
 
 void Player::set_callbacks(const Callbacks &callbacks){
-	LOCK_MUTEX(this->callbacks_mutex, "Player::set_callbacks()");
+	LOCK_MUTEX(this->callbacks_mutex);
 	this->callbacks = callbacks;
 }
 
 void *Player::get_front_cover(size_t playlist_position, size_t &size){
-	LOCK_MUTEX2(this->external_mutex, "Player::get_front_cover()");
+	LOCK_MUTEX(this->mutex);
 	if (playlist_position >= this->playlist.size()){
 		size = 0;
 		return nullptr;
@@ -207,7 +275,7 @@ void Player::release_front_cover(void *buffer){
 }
 
 void Player::get_playlist_state(size_t &size, size_t &position){
-	LOCK_MUTEX2(this->external_mutex, "Player::get_playlist_state()");
+	LOCK_MUTEX(this->mutex);
 	size = this->playlist.size();
 	position = this->playlist.get_current_index();
 }
@@ -307,8 +375,7 @@ void Player::select_output(const uniqueid_t &dst){
 						AudioQueueFlags flags = 0;
 						AudioTime atime;
 						auto ret = this->queue.pop_buffer(atime, flags, dst, size, samples_queued);
-						LOCK_MUTEX2(this->external_mutex, "Player::open_output()");
-						LOCK_MUTEX2(this->internal_mutex, "Player::open_output()");
+						LOCK_MUTEX(this->mutex);
 						this->current_time = atime.time;
 						this->current_stream_id = atime.stream_id;
 						if (flags&AudioQueueFlags_values::track_changed)
@@ -348,129 +415,83 @@ void Player::set_volume(double volume){
 	}
 }
 
-static float float_abs(float x){
-	return x >= 0 ? x : -x;
+audio_buffer_t Player::get_buffer(DecoderState &state, AudioFormat &format){
+	auto track = this->now_playing.get_track();
+	format = track.get_format();
+	auto buffer = track->read();
+	if (!buffer || !buffer->sample_count){
+		state.load = true;
+		this->playlist.next_track();
+		return audio_buffer_t{nullptr, release_buffer};
+	}
+	auto &extra_data = get_extra_data<BufferExtraData>(buffer);
+	extra_data.flags = 0;
+	extra_data.buffer_no = state.buffer_no++;
+	if (this->executing_seek){
+		extra_data.flags |= BufferExtraData_flags::seek_complete;
+		state.clear_seek = true;
+	}
+	return buffer;
 }
 
-static LevelQueue::Level peak_function(const std::vector<LevelQueue::Level> &input){
-	LevelQueue::Level ret;
-	ret.level_count = 0;
-	std::fill(ret.levels, ret.levels + array_length(ret.levels), 0.f);
-	for (auto &l : input){
-		ret.level_count = std::max(ret.level_count, l.level_count);
-		for (int i = 0; i < l.level_count; i++)
-			ret.levels[i] = std::max(ret.levels[i], float_abs(l.levels[i]));
+bool Player::load_track(std::shared_ptr<Decoder> &decoder){
+	auto track = this->now_playing.get_track();
+	if (!this->playlist.size()){
+		this->status = Status::Stopped;
+		return false;
 	}
-	return ret;
+	auto &playlist_track = this->playlist.get_current();
+	auto current_track_path = playlist_track.get_path();
+	auto current_track_subtrack = playlist_track.get_subtrack();
+	auto final_format = track.get_format();
+	//track->get_first_source().get_audio_format()
+	track = ManagedTrack();
+
+	if (!decoder || decoder->get_stream().get_path() != current_track_path)
+		decoder = this->internal_load(current_track_path);
+	auto stream = decoder->get_substream(current_track_subtrack);
+	auto stream_id = stream->get_stream_id();
+
+	auto queue = std::make_shared<LevelQueue>(peak_function);
+	queue->set_format(stream->get_audio_format());
+
+	stream->seek_to_sample(0, false);
+	auto new_format = stream->get_audio_format();
+	std::unique_ptr<BufferSource> np;
+	if (!stream || new_format != final_format)
+		np = build_filter_chain(std::move(stream), new_format, final_format, queue);
+	else
+		np = rebuild_filter_chain(std::move(stream), final_format, new_format, final_format, queue);
+	this->now_playing.set(std::move(np), new_format);
+	return true;
 }
 
 void Player::decoding_function(){
 	std::shared_ptr<Decoder> decoder;
-	unsigned buffer_no = 0;
+	DecoderState state;
 	auto buffer_index = this->queue.get_next_buffer_index();
 	try{
-		AudioFormat src_format = {Invalid, 0, 0};
-		AudioFormat dst_format = {Invalid, 0, 0};
-		std::unique_ptr<BufferSource> last_stream;
-
-		enum class State{
-			Initial,
-			Decode,
-			Done,
-		};
-
-		State state = State::Initial;
-		typedef std::unique_lock<decltype(this->external_mutex)> L;
-		L external_lock;
-		decltype(this->now_playing) np;
-		std::string current_track_path;
-		int current_track_subtrack;
-		audio_buffer_t buffer(nullptr, release_buffer);
-		while (state != State::Done){
-			switch (state){
-				case State::Initial:
-					{
-						external_lock = L(this->external_mutex);
-						LOCK_MUTEX2(this->internal_mutex, "Player::decoding_function(), State::Initial");
-						if (this->status == Status::Stopped){
-							state = State::Done;
-							continue;
-						}
-						dst_format = this->final_format;
-						if (this->now_playing){
-							np = std::move(this->now_playing);
-							state = State::Decode;
-							continue;
-						}
-
-						if (!this->playlist.size()){
-							this->status = Status::Stopped;
-							state = State::Done;
-							continue;
-						}
-						auto &track = this->playlist.get_current();
-						current_track_path = track.get_path();
-						current_track_subtrack = track.get_subtrack();
-						external_lock = L();
-					}
-					{
-						if (!decoder || decoder->get_stream().get_path() != current_track_path)
-							decoder = this->internal_load(current_track_path);
-						auto stream = decoder->get_substream(current_track_subtrack);
-						auto stream_id = stream->get_stream_id();
-
-						auto queue = std::make_shared<LevelQueue>(peak_function);
-						queue->set_format(stream->get_audio_format());
-						{
-							LOCK_MUTEX2(this->external_mutex, "Player::decoding_function(), State::Initial");
-							this->level_queues[stream_id] = queue;
-						}
-
-						stream->seek_to_sample(0, false);
-						auto new_src_format = stream->get_audio_format();
-						if (!last_stream || new_src_format != src_format)
-							np = build_filter_chain(std::move(stream), new_src_format, this->final_format, queue);
-						else
-							np = rebuild_filter_chain(std::move(stream), src_format, new_src_format, this->final_format, queue);
-						last_stream.reset();
-						src_format = new_src_format;
-					}
-					external_lock = L(this->external_mutex);
-					state = State::Decode;
-				case State::Decode:
-					buffer = np->read();
-					if (!buffer || !buffer->sample_count){
-						last_stream = std::move(np);
-						{
-							LOCK_MUTEX2(this->internal_mutex, "Player::decoding_function(), State::Decode");
-							this->playlist.next_track();
-						}
-						external_lock = L();
-						state = State::Initial;
-						continue;
-					}
-					{
-						auto &extra_data = get_extra_data<BufferExtraData>(buffer);
-						extra_data.flags = 0;
-						extra_data.buffer_no = buffer_no++;
-						bool clear_seek = false;
-						if (this->executing_seek){
-							extra_data.flags |= BufferExtraData_flags::seek_complete;
-							clear_seek = true;
-						}
-						this->now_playing = std::move(np);
-						external_lock = L();
-						bool pushed = this->queue.push_to_queue(std::move(buffer), dst_format, buffer_index);
-						if (pushed && clear_seek)
-							this->executing_seek = false;
-						state = State::Initial;
-					}
-					continue;
+		while (true){
+			if (this->status == Status::Stopped)
+				break;
+			if (state.load){
+				if (!this->load_track(decoder))
+					break;
+				state.load = false;
+				continue;
 			}
+			state.clear_seek = false;
+			AudioFormat dst_format;
+			auto buffer = this->get_buffer(state, dst_format);
+			if (!buffer)
+				continue;
+			bool pushed = this->queue.push_to_queue(std::move(buffer), dst_format, buffer_index);
+			if (pushed && state.clear_seek)
+				this->executing_seek = false;
 		}
 	}catch (...){
 	}
-	this->now_playing.reset();
+	this->now_playing.clear();
 }
 
 void Player::async_notifications_function(){
@@ -479,7 +500,7 @@ void Player::async_notifications_function(){
 		if (notification.type == NotificationType::Destructing)
 			break;
 		{
-			LOCK_MUTEX(this->callbacks_mutex, "Player::async_notifications_function()");
+			LOCK_MUTEX(this->callbacks_mutex);
 			if (this->callbacks.on_notification)
 				this->callbacks.on_notification(this->callbacks.cb_data, &notification);
 		}
@@ -514,28 +535,5 @@ void Player::load_plugins(){
 }
 
 void Player::audio_format_changed(const AudioFormat &af){
-	auto old_format = this->final_format;
-	if (af == old_format)
-		return;
-
-	this->queue.set_expected_format(af);
-
-	LOCK_MUTEX2(this->external_mutex, "Player::audio_format_changed()");
-	LOCK_MUTEX2(this->internal_mutex, "Player::audio_format_changed()");
-	this->final_format = af;
-	if (this->now_playing){
-		auto temp = this->now_playing->unroll_chain();
-		if (temp)
-			this->now_playing = std::move(temp);
-		auto extra = this->queue.flush_queue();
-		auto substream = static_cast<DecoderSubstream *>(this->now_playing.get());
-		auto stream_id = substream->get_stream_id();
-		if (stream_id == extra.stream_id){
-			rational_t time(extra.timestamp.numerator, extra.timestamp.denominator);
-			time += rational_t(extra.sample_offset, old_format.freq);
-			substream->seek_to_second(time, false);
-		}
-		auto format = substream->get_audio_format();
-		this->now_playing = build_filter_chain(std::move(this->now_playing), format, this->final_format, this->level_queues[stream_id]);
-	}
+	this->now_playing.change_format(af);
 }
