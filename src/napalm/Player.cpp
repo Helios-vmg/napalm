@@ -53,20 +53,23 @@ void TrackManager::clear(){
 	this->track.reset();
 }
 
-void TrackManager::set(std::unique_ptr<BufferSource> &&track, const AudioFormat &format){
+void TrackManager::set(std::unique_ptr<BufferSource> &&track, const AudioFormat &format, const std::shared_ptr<LevelQueue> &queue){
 	LOCK_MUTEX(this->track_mutex);
 	LOCK_MUTEX(this->mutex);
 	this->track = std::move(track);
-	this->final_format = format;
 	this->valid = true;
-
+	auto stream_id = this->track->get_first_source().get_stream_id();
+	this->level_queues[stream_id] = queue;
 }
 
 void TrackManager::change_format(const AudioFormat &af){
 	LOCK_MUTEX(this->track_mutex);
 	LOCK_MUTEX(this->mutex);
-	if (!this->valid)
+	if (!this->valid){
+		this->final_format = af;
+		this->queue.set_expected_format(af);
 		return;
+	}
 	auto old_format = this->final_format;
 	if (af == old_format)
 		return;
@@ -85,7 +88,6 @@ void TrackManager::change_format(const AudioFormat &af){
 	}
 	auto format = substream->get_audio_format();
 	this->track = build_filter_chain(std::move(this->track), format, this->final_format, this->level_queues[stream_id]);
-	this->final_format = format;
 }
 
 template <typename T>
@@ -94,7 +96,11 @@ std::unique_lock<T> lock(T &mutex){
 }
 
 ManagedTrack TrackManager::get_track(){
-	return ManagedTrack(*this, std::move(this->track), lock(this->track_mutex), this->final_format, this->level_queues[this->stream_id]);
+	std::shared_ptr<LevelQueue> queue;
+	auto it = this->level_queues.find(this->stream_id);
+	if (it != this->level_queues.end())
+		queue = it->second;
+	return ManagedTrack(*this, std::move(this->track), lock(this->track_mutex), this->final_format, queue);
 }
 
 void TrackManager::return_track(std::unique_ptr<BufferSource> &&track){
@@ -148,8 +154,8 @@ void Player::play(){
 		case Status::Stopped:
 			if (this->decoding_thread.joinable())
 				this->decoding_thread.join();
-			this->decoding_thread = std::thread([this](){ this->decoding_function(); });
 			this->status = Status::Playing;
+			this->decoding_thread = std::thread([this](){ this->decoding_function(); });
 			break;
 		case Status::Playing:
 			this->seek(rational_t(0, 1));
@@ -443,9 +449,11 @@ bool Player::load_track(std::shared_ptr<Decoder> &decoder){
 	auto &playlist_track = this->playlist.get_current();
 	auto current_track_path = playlist_track.get_path();
 	auto current_track_subtrack = playlist_track.get_subtrack();
-	auto final_format = track.get_format();
-	//track->get_first_source().get_audio_format()
+	auto old_format = track.get_format();
+	if (!track)
+		old_format = { Invalid, 0, 0 };
 	track = ManagedTrack();
+	//track->get_first_source().get_audio_format()
 
 	if (!decoder || decoder->get_stream().get_path() != current_track_path)
 		decoder = this->internal_load(current_track_path);
@@ -458,11 +466,12 @@ bool Player::load_track(std::shared_ptr<Decoder> &decoder){
 	stream->seek_to_sample(0, false);
 	auto new_format = stream->get_audio_format();
 	std::unique_ptr<BufferSource> np;
-	if (!stream || new_format != final_format)
+	auto final_format = this->now_playing.get_final_format();
+	if (!stream || new_format != old_format)
 		np = build_filter_chain(std::move(stream), new_format, final_format, queue);
 	else
-		np = rebuild_filter_chain(std::move(stream), final_format, new_format, final_format, queue);
-	this->now_playing.set(std::move(np), new_format);
+		np = rebuild_filter_chain(std::move(stream), old_format, new_format, final_format, queue);
+	this->now_playing.set(std::move(np), new_format, queue);
 	return true;
 }
 
@@ -489,6 +498,8 @@ void Player::decoding_function(){
 			if (pushed && state.clear_seek)
 				this->executing_seek = false;
 		}
+	}catch (std::exception &e){
+		std::cerr << e.what() << std::endl;
 	}catch (...){
 	}
 	this->now_playing.clear();

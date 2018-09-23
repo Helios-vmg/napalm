@@ -15,7 +15,7 @@ void AudioQueue::clear_queue(AudioBuffer *&head){
 }
 
 void AudioQueue::set_expected_format(const AudioFormat &format){
-	std::lock_guard<std::mutex> lg(this->mutex);
+	LOCK_MUTEX(this->mutex);
 	this->expected_format = format;
 }
 
@@ -23,7 +23,7 @@ bool AudioQueue::push_to_queue(audio_buffer_t &&buffer, AudioFormat format, std:
 	bool ret = false;
 	while (true){
 		{
-			LOCK_MUTEX(this->mutex, "AudioQueue::push_to_queue()");
+			LOCK_MUTEX(this->mutex);
 			if (format != this->expected_format || this->next_buffer_index != buffer_index)
 				break;
 			if (this->size < this->limit){

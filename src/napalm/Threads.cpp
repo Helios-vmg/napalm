@@ -1,18 +1,18 @@
 #include "Threads.h"
 
 void Event::signal(){
-	LOCK_MUTEX(this->mutex, "Event::signal()");
+	LOCK_MUTEX(this->mutex);
 	this->signalled = true;
 	this->cv.notify_one();
 }
 
 bool Event::state(){
-	LOCK_MUTEX(this->mutex, "Event::state()");
+	LOCK_MUTEX(this->mutex);
 	return this->signalled;
 }
 
 void Event::reset(){
-	LOCK_MUTEX(this->mutex, "Event::reset()");
+	LOCK_MUTEX(this->mutex);
 	this->signalled = false;
 }
 

@@ -124,12 +124,16 @@ class TrackManager{
 public:
 	TrackManager(AudioQueue &queue) : queue(queue){}
 	void clear();
-	void set(std::unique_ptr<BufferSource> &&track, const AudioFormat &);
+	void set(std::unique_ptr<BufferSource> &&track, const AudioFormat &, const std::shared_ptr<LevelQueue> &);
 	void change_format(const AudioFormat &);
 	ManagedTrack get_track();
 	operator bool() const{
 		LOCK_MUTEX(this->mutex);
 		return this->valid;
+	}
+	AudioFormat get_final_format() const{
+		LOCK_MUTEX(this->mutex);
+		return this->final_format;
 	}
 	std::uint64_t get_stream_id() const{
 		LOCK_MUTEX(this->mutex);

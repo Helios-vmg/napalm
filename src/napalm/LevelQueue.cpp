@@ -35,14 +35,14 @@ void LevelQueue::push_data(const smart_c_struct<AudioBuffer> &buffer){
 			li.level = this->level_function(this->temp_buffer);
 			this->time += li.duration;
 			this->temp_buffer.clear();
-			LOCK_MUTEX(this->mutex, "LevelQueue::push_data()");
+			LOCK_MUTEX(this->mutex);
 			this->queue.push_back(li);
 		}
 	}
 }
 
 LevelQueue::Level LevelQueue::get_level(const rational_t &time){
-	LOCK_MUTEX(this->mutex, "LevelQueue::push_data()");
+	LOCK_MUTEX(this->mutex);
 	Level ret;
 	while (this->queue.size()){
 		auto &front = this->queue.front();
@@ -60,7 +60,7 @@ LevelQueue::Level LevelQueue::get_level(const rational_t &time){
 }
 
 void LevelQueue::clear(const rational_t &time){
-	LOCK_MUTEX(this->mutex, "LevelQueue::clear()");
+	LOCK_MUTEX(this->mutex);
 	this->queue.clear();
 	this->temp_buffer.clear();
 	this->time = time;
