@@ -60,6 +60,7 @@ void TrackManager::set(std::unique_ptr<BufferSource> &&track, const AudioFormat 
 	this->track = std::move(track);
 	this->valid = true;
 	auto stream_id = this->track->get_first_source().get_stream_id();
+	this->stream_id = stream_id;
 	this->level_queues[stream_id] = queue;
 }
 

@@ -15,6 +15,7 @@
 #include <limits>
 
 class Player;
+static const std::uint64_t unset_current_stream_id = std::numeric_limits<std::uint64_t>::max();
 
 enum class Status{
 	Stopped,
@@ -116,7 +117,7 @@ class TrackManager{
 	std::mutex track_mutex;
 	bool valid = false;
 	std::unique_ptr<BufferSource> track;
-	std::uint64_t stream_id;
+	std::uint64_t stream_id = unset_current_stream_id;
 	AudioFormat final_format;
 	std::map<std::uint64_t, std::shared_ptr<LevelQueue>> level_queues;
 
@@ -171,7 +172,6 @@ class Player{
 	Playlist playlist;
 	std::thread decoding_thread;
 	rational_t current_time = {-1, 1};
-	static const std::uint64_t unset_current_stream_id = std::numeric_limits<std::uint64_t>::max();
 	std::uint64_t current_stream_id = unset_current_stream_id;
 	std::mutex mutex;
 	std::mutex callbacks_mutex;
