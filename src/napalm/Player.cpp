@@ -46,6 +46,7 @@ ManagedTrack::~ManagedTrack(){
 }
 
 void TrackManager::clear(){
+	LOCK_MUTEX(this->track_mutex);
 	LOCK_MUTEX(this->mutex);
 	if (!this->valid)
 		return;
@@ -100,7 +101,8 @@ ManagedTrack TrackManager::get_track(){
 	auto it = this->level_queues.find(this->stream_id);
 	if (it != this->level_queues.end())
 		queue = it->second;
-	return ManagedTrack(*this, std::move(this->track), lock(this->track_mutex), this->final_format, queue);
+	auto l = lock(this->track_mutex);
+	return ManagedTrack(*this, std::move(this->track), std::move(l), this->final_format, queue);
 }
 
 void TrackManager::return_track(std::unique_ptr<BufferSource> &&track){
@@ -423,6 +425,10 @@ void Player::set_volume(double volume){
 
 audio_buffer_t Player::get_buffer(DecoderState &state, AudioFormat &format){
 	auto track = this->now_playing.get_track();
+	if (!track){
+		state.load = true;
+		return audio_buffer_t{nullptr, release_buffer};
+	}
 	format = track.get_format();
 	auto buffer = track->read();
 	if (!buffer || !buffer->sample_count){
