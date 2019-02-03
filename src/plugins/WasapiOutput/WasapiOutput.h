@@ -129,11 +129,11 @@ protected:
 	void thread_func();
 	void check_events();
 	void get_more_samples();
-	void initialize_audio_engine();
+	HRESULT initialize_audio_engine();
 	virtual std::vector<HANDLE> get_events();
 	virtual void initialize_stream_switching();
 	virtual bool handle_event(DWORD);
-	void start_client();
+	virtual void start_client();
 	void volume_changed();
 public:
 	SpecificWasapiOutputDevice(WasapiOutput &parent, const com_shared<IMMDeviceEnumerator> &enumerator, com_unique<IMMDevice> &&);

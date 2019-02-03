@@ -5,6 +5,11 @@
 #include <avrt.h>
 #include <RationalValue.h>
 
+class DeviceInvalidated : public std::runtime_error{
+public:
+	DeviceInvalidated(const char *location): std::runtime_error((std::string)location + ": device invalidated"){}
+};
+
 WasapiOutput::WasapiOutput(){}
 
 WasapiOutput::~WasapiOutput(){
@@ -422,8 +427,11 @@ void SpecificWasapiOutputDevice::close(){
 
 void SpecificWasapiOutputDevice::start_client(){
 	auto result = this->audio_client->Start();
-	if (!SUCCEEDED(result))
+	if (!SUCCEEDED(result)){
+		if (result == AUDCLNT_E_DEVICE_INVALIDATED)
+			throw DeviceInvalidated("Start audio client");
 		throw std::runtime_error("Failed to start audio client: " + to_string(result));
+	}
 }
 
 void SpecificWasapiOutputDevice::set_client(){
@@ -434,7 +442,7 @@ void SpecificWasapiOutputDevice::set_client(){
 	this->audio_client = to_unique(audio_client_ptr);
 }
 
-void SpecificWasapiOutputDevice::initialize_audio_engine(){
+HRESULT SpecificWasapiOutputDevice::initialize_audio_engine(){
 	const REFERENCE_TIME one_millisecond = 10000;
 
 	auto &exformat = *this->exformats[this->format_index];
@@ -447,8 +455,13 @@ void SpecificWasapiOutputDevice::initialize_audio_engine(){
         &exformat,
         nullptr
 	);
-    if (!SUCCEEDED(result))
+	if (!SUCCEEDED(result)){
+		if (result == AUDCLNT_E_DEVICE_INVALIDATED)
+			throw DeviceInvalidated("Initialize audio client");
+		if (result == AUDCLNT_E_UNSUPPORTED_FORMAT)
+			return result;
 		throw std::runtime_error("Failed to initialize audio client: " + to_string(result));
+	}
 
 	this->selected_format = this->formats[this->format_index];
 
@@ -473,6 +486,7 @@ void SpecificWasapiOutputDevice::initialize_audio_engine(){
 		this->volume = to_unique(volume_ptr);
 	else
 		this->volume.reset();
+	return S_OK;
 }
 
 OutputDevice *WasapiOutput::open_device(const UniqueID &unique_id, size_t format_index, const AudioCallbackData &callback){
@@ -653,17 +667,28 @@ public:
 		return S_OK;
 	}
 	STDMETHOD(OnSessionDisconnected) (AudioSessionDisconnectReason DisconnectReason){
+		bool expected = false;
 		switch (DisconnectReason){
 			case DisconnectReasonDeviceRemoval:
+#if 0
 				*this->switching_streams = true;
-				SetEvent(this->stream_switch_event.get());
+#else
+				if (this->switching_streams->compare_exchange_strong(expected, true))
+#endif
+					SetEvent(this->stream_switch_event.get());
 				break;
 			case DisconnectReasonServerShutdown:
 				break;
 			case DisconnectReasonFormatChanged:
+#if 0
 				*this->switching_streams = true;
-				SetEvent(this->stream_switch_event.get());
-				SetEvent(this->stream_switch_complete_event.get());
+#else
+				if (this->switching_streams->compare_exchange_strong(expected, true))
+#endif
+				{
+					SetEvent(this->stream_switch_event.get());
+					SetEvent(this->stream_switch_complete_event.get());
+				}
 				break;
 			case DisconnectReasonSessionLogoff:
 				break;
@@ -678,9 +703,10 @@ public:
 	}
 	STDMETHOD(OnDefaultDeviceChanged)(EDataFlow Flow, ERole Role, LPCWSTR NewDefaultDeviceId){
 		bool expected = false;
-		if (this->switching_streams->compare_exchange_strong(expected, true))
+		if (this->switching_streams->compare_exchange_strong(expected, true)){
 			SetEvent(this->stream_switch_event.get());
-		SetEvent(this->stream_switch_complete_event.get());
+			SetEvent(this->stream_switch_complete_event.get());
+		}
 		return S_OK;
 	}
 
@@ -724,8 +750,11 @@ public:
 void SpecificWasapiOutputDevice::initialize_stream_switching(){
     IAudioSessionControl *audio_session_control_ptr;
 	auto result = this->audio_client->GetService(IID_PPV_ARGS(&audio_session_control_ptr));
-	if (!SUCCEEDED(result))
+	if (!SUCCEEDED(result)){
+		if (result == AUDCLNT_E_DEVICE_INVALIDATED)
+			throw DeviceInvalidated("Get audio session control");
 		throw std::runtime_error("Failed to get audio session control: " + to_string(result));
+	}
 	this->session_control.reset(audio_session_control_ptr);
 
 	if (!this->notifier){
@@ -749,47 +778,68 @@ void SpecificWasapiOutputDevice::initialize_stream_switching(){
 
 bool DefaultWasapiOutputDevice::switch_streams(){
 	try{
+
+		DWORD waitResult = WaitForSingleObject(this->stream_switch_complete_event.get(), 500);
+		if (waitResult == WAIT_TIMEOUT)
+			return false;
+
 		HRESULT result;
 		if (this->audio_client){
 			result = this->audio_client->Stop();
 			if (!SUCCEEDED(result))
 				return false;
 		}
-		//result = this->session_control->UnregisterAudioSessionNotification(this->notifier.get());
-		//if (!SUCCEEDED(result))
-		//	return false;
+		if (this->session_control){
+			result = this->session_control->UnregisterAudioSessionNotification(this->notifier.get());
+			if (!SUCCEEDED(result))
+				return false;
+			this->session_control.reset();
+		}
 		//result = this->enumerator->UnregisterEndpointNotificationCallback(this->notifier.get());
 		//if (!SUCCEEDED(result))
 		//	return false;
-		this->session_control.reset();
+
+retry_device:
 		this->volume.reset();
 		this->render_client.reset();
 		this->audio_client.reset();
-		this->device.reset();
+		int retry = 0;
+		try{
+			this->device.reset();
 
-		DWORD waitResult = WaitForSingleObject(this->stream_switch_complete_event.get(), 500);
-		if (waitResult == WAIT_TIMEOUT)
-			return false;
 
-		IMMDevice *device;
-		result = this->enumerator->GetDefaultAudioEndpoint(eRender, this->role, &device);
-		if (!SUCCEEDED(result)){
-			if (result != E_NOTFOUND)
-				return false;
-			//No devices were found to use. Continue anyway.
-			AudioFormat invalid{NumberFormat::Invalid, 0, 0};
-			this->notify_client(&invalid);
-			ResetEvent(this->stream_switch_complete_event.get());
-		}else{
-			this->device = to_unique(device);
-			this->set_client();
-			auto property_store = this->get_property_store();
-			this->set_format(*property_store);
-			this->notify_client(&this->formats[0]);
-			this->initialize_audio_engine();
-			//this->initialize_stream_switching();
-			ResetEvent(this->stream_switch_complete_event.get());
-			this->start_client();
+			IMMDevice *device;
+			result = this->enumerator->GetDefaultAudioEndpoint(eRender, this->role, &device);
+			if (!SUCCEEDED(result)){
+				if (result != E_NOTFOUND)
+					return false;
+				//No devices were found to use. Continue anyway.
+				AudioFormat invalid{ NumberFormat::Invalid, 0, 0 };
+				this->notify_client(&invalid);
+				ResetEvent(this->stream_switch_complete_event.get());
+			}else{
+				this->device = to_unique(device);
+retry_client:
+				this->set_client();
+				auto property_store = this->get_property_store();
+				this->set_format(*property_store);
+				result = this->initialize_audio_engine();
+				if (!SUCCEEDED(result)){
+					if (!retry++){
+						this->volume.reset();
+						this->render_client.reset();
+						this->audio_client.reset();
+						goto retry_client;
+					}
+					throw std::runtime_error("initialize_audio_engine(): " + to_string(result));
+				}
+				this->notify_client(&this->formats[0]);
+				this->initialize_stream_switching();
+				this->start_client();
+				ResetEvent(this->stream_switch_complete_event.get());
+			}
+		}catch (DeviceInvalidated &){
+			goto retry_device;
 		}
 		*this->switching_streams = false;
 		return true;
