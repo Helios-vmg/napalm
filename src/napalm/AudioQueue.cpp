@@ -52,7 +52,7 @@ size_t AudioQueue::pop_buffer(AudioTime &atime, AudioQueueFlags &flags, void *vo
 	bool signal = false;
 	bool time_set = false;
 	{
-		LOCK_MUTEX(this->mutex, "AudioQueue::pop_buffer()");
+		LOCK_MUTEX(this->mutex);
 		auto dst = (std::uint8_t *)void_dst;
 		auto sample_size = sizeof_NumberFormat(this->expected_format.format) * this->expected_format.channels;
 		while (size){
@@ -102,7 +102,7 @@ size_t AudioQueue::pop_buffer(AudioTime &atime, AudioQueueFlags &flags, void *vo
 }
 
 BufferExtraData AudioQueue::flush_queue(){
-	LOCK_MUTEX(this->mutex, "AudioQueue::flush_queue()");
+	LOCK_MUTEX(this->mutex);
 	BufferExtraData ret;
 	bool set = false;
 	memset(&ret, 0, sizeof(ret));
