@@ -75,13 +75,13 @@ void WasapiOutput::init_device_list(){
 		}
 	}
 
-    IMMDeviceEnumerator *device_enumerator_ptr = nullptr;
+	IMMDeviceEnumerator *device_enumerator_ptr = nullptr;
 	result = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&device_enumerator_ptr));
 	if (!SUCCEEDED(result))
 		throw std::runtime_error("Failed to create MMDeviceEnumerator: " + to_string(result));
 	auto enumerator = to_shared(device_enumerator_ptr);
 
-    IMMDeviceCollection *device_collection_ptr = nullptr;
+	IMMDeviceCollection *device_collection_ptr = nullptr;
 	result = enumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &device_collection_ptr);
 	if (!SUCCEEDED(result))
 		throw std::runtime_error("Failed to get device enumeration: " + to_string(result));
@@ -280,7 +280,7 @@ DefaultWasapiOutputDevice::DefaultWasapiOutputDevice(WasapiOutput &parent, const
 		SpecificWasapiOutputDevice(parent, enumerator),
 		role(role){
 
-    IMMDevice *device;
+	IMMDevice *device;
 	auto result = enumerator->GetDefaultAudioEndpoint(eRender, role, &device);
 	if (!SUCCEEDED(result))
 		throw std::exception();
@@ -437,7 +437,7 @@ void SpecificWasapiOutputDevice::start_client(){
 void SpecificWasapiOutputDevice::set_client(){
 	IAudioClient *audio_client_ptr;
 	auto result = this->device->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, nullptr, (void **)&audio_client_ptr);
-    if (!SUCCEEDED(result))
+	if (!SUCCEEDED(result))
 		throw std::runtime_error("Failed to activate audio client: " + to_string(result));
 	this->audio_client = to_unique(audio_client_ptr);
 }
@@ -449,11 +449,11 @@ HRESULT SpecificWasapiOutputDevice::initialize_audio_engine(){
 
 	auto result = this->audio_client->Initialize(
 		AUDCLNT_SHAREMODE_SHARED, 
-        AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
-        one_millisecond,
-        0,
-        &exformat,
-        nullptr
+		AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+		one_millisecond,
+		0,
+		&exformat,
+		nullptr
 	);
 	if (!SUCCEEDED(result)){
 		if (result == AUDCLNT_E_DEVICE_INVALIDATED)
@@ -474,9 +474,9 @@ HRESULT SpecificWasapiOutputDevice::initialize_audio_engine(){
 
 	this->audio_client->SetEventHandle(this->samples_event.get());
 
-    IAudioRenderClient *render_client_ptr;
-    result = this->audio_client->GetService(IID_PPV_ARGS(&render_client_ptr));
-    if (!SUCCEEDED(result))
+	IAudioRenderClient *render_client_ptr;
+	result = this->audio_client->GetService(IID_PPV_ARGS(&render_client_ptr));
+	if (!SUCCEEDED(result))
 		throw std::runtime_error("Failed to get render client: " + to_string(result));
 	this->render_client = to_unique(render_client_ptr);
 
@@ -505,19 +505,19 @@ constexpr size_t array_length(const T (&)[N]){
 }
 
 void SpecificWasapiOutputDevice::thread_func(){
-    auto wait_array = this->get_events();
+	auto wait_array = this->get_events();
 	
 	auto result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 	if (!SUCCEEDED(result))
 		return;
 
-    DWORD mmcss_task_index = 0;
+	DWORD mmcss_task_index = 0;
 	auto mmcss_handle_ptr = AvSetMmThreadCharacteristicsW(L"Audio", &mmcss_task_index);
 	typedef std::remove_pointer<decltype(mmcss_handle_ptr)>::type P;
 	std::unique_ptr<P, void (*)(P *handle)> mmcss_handle(mmcss_handle_ptr, [](P *handle){ AvRevertMmThreadCharacteristics(handle); });
 
 	while (!this->stopping){
-        DWORD wait_result = WaitForMultipleObjects((DWORD)wait_array.size(), &wait_array[0], false, INFINITE);
+		DWORD wait_result = WaitForMultipleObjects((DWORD)wait_array.size(), &wait_array[0], false, INFINITE);
 		this->handle_event(wait_result);
 	}
 }
@@ -617,7 +617,7 @@ class SessionNotifier : public IAudioSessionEvents, public IMMNotificationClient
 		stream_switch_complete_event,
 		volume_event;
 	std::shared_ptr<std::atomic<bool>> switching_streams;
-    LONG refcount = 0;
+	LONG refcount = 0;
 	std::atomic<float> volume = 1;
 public:
 	SessionNotifier(
@@ -637,10 +637,10 @@ public:
 	STDMETHOD(OnDisplayNameChanged)(LPCWSTR NewDisplayName, LPCGUID EventContext){
 		return S_OK;
 	}
-    STDMETHOD(OnIconPathChanged)(LPCWSTR NewIconPath, LPCGUID EventContext){
+	STDMETHOD(OnIconPathChanged)(LPCWSTR NewIconPath, LPCGUID EventContext){
 		return S_OK;
 	}
-    STDMETHOD(OnSimpleVolumeChanged)(float NewSimpleVolume, BOOL NewMute, LPCGUID EventContext){
+	STDMETHOD(OnSimpleVolumeChanged)(float NewSimpleVolume, BOOL NewMute, LPCGUID EventContext){
 		this->volume = NewSimpleVolume;
 		SetEvent(this->volume_event.get());
 		return S_OK;
@@ -648,22 +648,22 @@ public:
 	STDMETHOD(OnChannelVolumeChanged)(DWORD ChannelCount, float NewChannelVolumes[], DWORD ChangedChannel, LPCGUID EventContext){
 		return S_OK;
 	}
-    STDMETHOD(OnGroupingParamChanged)(LPCGUID NewGroupingParam, LPCGUID EventContext){
+	STDMETHOD(OnGroupingParamChanged)(LPCGUID NewGroupingParam, LPCGUID EventContext){
 		return S_OK;
 	}
-    STDMETHOD(OnStateChanged)(AudioSessionState NewState){
+	STDMETHOD(OnStateChanged)(AudioSessionState NewState){
 		return S_OK;
 	}
-    STDMETHOD(OnDeviceStateChanged)(LPCWSTR DeviceId, DWORD NewState){
+	STDMETHOD(OnDeviceStateChanged)(LPCWSTR DeviceId, DWORD NewState){
 		return S_OK;
 	}
-    STDMETHOD(OnDeviceAdded)(LPCWSTR DeviceId){
+	STDMETHOD(OnDeviceAdded)(LPCWSTR DeviceId){
 		return S_OK;
 	}
-    STDMETHOD(OnDeviceRemoved)(LPCWSTR DeviceId){
+	STDMETHOD(OnDeviceRemoved)(LPCWSTR DeviceId){
 		return S_OK;
 	}
-    STDMETHOD(OnPropertyValueChanged)(LPCWSTR DeviceId, const PROPERTYKEY Key){
+	STDMETHOD(OnPropertyValueChanged)(LPCWSTR DeviceId, const PROPERTYKEY Key){
 		return S_OK;
 	}
 	STDMETHOD(OnSessionDisconnected) (AudioSessionDisconnectReason DisconnectReason){
@@ -736,7 +736,7 @@ public:
 		}
 		return S_OK;
 	}
-    STDMETHOD_(ULONG, AddRef)(){
+	STDMETHOD_(ULONG, AddRef)(){
 		return InterlockedIncrement(&this->refcount);
 	}
 	STDMETHOD_(ULONG, Release)(){
@@ -748,7 +748,7 @@ public:
 };
 
 void SpecificWasapiOutputDevice::initialize_stream_switching(){
-    IAudioSessionControl *audio_session_control_ptr;
+	IAudioSessionControl *audio_session_control_ptr;
 	auto result = this->audio_client->GetService(IID_PPV_ARGS(&audio_session_control_ptr));
 	if (!SUCCEEDED(result)){
 		if (result == AUDCLNT_E_DEVICE_INVALIDATED)
