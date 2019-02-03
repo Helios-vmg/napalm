@@ -46,28 +46,24 @@ ManagedTrack::~ManagedTrack(){
 }
 
 void TrackManager::clear(){
-	LOCK_MUTEX(this->track_mutex);
 	LOCK_MUTEX(this->mutex);
-	if (!this->valid)
-		return;
-	this->valid = false;
+	LOCK_MUTEX(this->track_mutex);
 	this->track.reset();
 }
 
 void TrackManager::set(std::unique_ptr<BufferSource> &&track, const AudioFormat &format, const std::shared_ptr<LevelQueue> &queue){
-	LOCK_MUTEX(this->track_mutex);
 	LOCK_MUTEX(this->mutex);
+	LOCK_MUTEX(this->track_mutex);
 	this->track = std::move(track);
-	this->valid = true;
 	auto stream_id = this->track->get_first_source().get_stream_id();
 	this->stream_id = stream_id;
 	this->level_queues[stream_id] = queue;
 }
 
 void TrackManager::change_format(const AudioFormat &af){
-	LOCK_MUTEX(this->track_mutex);
 	LOCK_MUTEX(this->mutex);
-	if (!this->valid){
+	LOCK_MUTEX(this->track_mutex);
+	if (!this->track){
 		this->final_format = af;
 		this->queue.set_expected_format(af);
 		return;
@@ -171,11 +167,11 @@ void Player::play(){
 }
 
 void Player::seek(const rational_t &time){
-	if (!this->now_playing){
+	auto track = this->now_playing.get_track();
+	if (!track){
 		this->notification_queue.push(NotificationType::SeekComplete);
 		return;
 	}
-	auto track = this->now_playing.get_track();
 	auto &substream = track->get_first_source();
 	if (substream.seek_to_second(time, false) < 0){
 		this->notification_queue.push(NotificationType::SeekComplete);
@@ -219,8 +215,11 @@ void Player::stop(){
 				this->status = Status::Stopped;
 				break;
 		}
-		if (this->now_playing)
-			this->now_playing.get_track()->flush();
+		{
+			auto track = this->now_playing.get_track();
+			if (track)
+				track->flush();
+		}
 		this->queue.flush_queue();
 		if (this->output_device)
 			this->output_device->flush();

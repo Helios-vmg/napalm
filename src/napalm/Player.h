@@ -115,7 +115,6 @@ class TrackManager{
 	mutable std::mutex mutex;
 	AudioQueue &queue;
 	std::mutex track_mutex;
-	bool valid = false;
 	std::unique_ptr<BufferSource> track;
 	std::uint64_t stream_id = unset_current_stream_id;
 	AudioFormat final_format;
@@ -128,10 +127,6 @@ public:
 	void set(std::unique_ptr<BufferSource> &&track, const AudioFormat &, const std::shared_ptr<LevelQueue> &);
 	void change_format(const AudioFormat &);
 	ManagedTrack get_track();
-	operator bool() const{
-		LOCK_MUTEX(this->mutex);
-		return this->valid;
-	}
 	AudioFormat get_final_format() const{
 		LOCK_MUTEX(this->mutex);
 		return this->final_format;
