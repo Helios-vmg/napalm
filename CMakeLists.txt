@@ -303,6 +303,7 @@ file(GLOB OGG_DECODER_SOURCES
 )
 
 include_directories(
+	mingw-std-threads
 	src/common
 	dependencies/sources/libogg-1.3.3/include
 	dependencies/sources/libvorbis-1.3.6/include
@@ -327,6 +328,7 @@ file(GLOB FLAC_DECODER_SOURCES
 )
 
 include_directories(
+	mingw-std-threads
 	src/common
 	dependencies/sources/flac-1.3.2/include
 	dependencies/sources/libogg-1.3.3/include
@@ -351,7 +353,10 @@ file(GLOB NULL_OUTPUT_SOURCES
 	"src/common/sha256.c"
 )
 
-include_directories(src/common)
+include_directories(
+	mingw-std-threads
+	src/common
+)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
 set(CMAKE_CXX_STANDARD 14)
@@ -371,6 +376,7 @@ file(GLOB PA_OUTPUT_SOURCES
 )
 
 include_directories(
+	mingw-std-threads
 	src/common
 	dependencies/sources/portaudio-v190600/include
 )
@@ -391,8 +397,11 @@ file(GLOB NAPALM_SOURCES "src/napalm/*.cpp")
 
 #INCLUDE(FindPkgConfig)
 #PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
-include_directories(src/common dependencies/sources/libsamplerate-0.1.9/src)
-
+include_directories(
+	mingw-std-threads
+	src/common
+	dependencies/sources/libsamplerate-0.1.9/src
+)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 14)
@@ -415,7 +424,11 @@ file(GLOB TNAPALM_SOURCES
 	"src/external/Player.cpp"
 )
 
-include_directories(src/common src/external)
+include_directories(
+	mingw-std-threads
+	src/common
+	src/external
+)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 14)

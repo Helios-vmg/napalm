@@ -1,7 +1,5 @@
 #pragma once
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+#include <thread_compat.hpp>
 
 #define CONCAT(x, y) x##y
 #define CONCAT2(x, y) CONCAT(x, y)

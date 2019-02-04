@@ -1,8 +1,7 @@
 #pragma once
 
-#include <mutex>
 #include <unordered_map>
-#include <thread>
+#include <thread_compat.hpp>
 #include <string>
 
 class Module{

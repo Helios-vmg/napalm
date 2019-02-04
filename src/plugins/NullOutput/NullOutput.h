@@ -1,12 +1,10 @@
 #pragma once
 
 #include "../common/output.hpp"
-#include <mutex>
 #include <unordered_map>
-#include <thread>
+#include <thread_compat.hpp>
 #include <array>
 #include <string>
-#include <thread>
 #include <atomic>
 
 class NullOutput;
