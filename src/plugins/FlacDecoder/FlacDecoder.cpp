@@ -4,6 +4,7 @@
 #include <libcue.h>
 #include <sstream>
 #include <iomanip>
+#include <mutex>
 
 static const int cue_divisions_per_second = 75;
 

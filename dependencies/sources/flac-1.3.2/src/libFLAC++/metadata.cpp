@@ -41,6 +41,13 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for memcpy() etc.
 
+static char *my_strdup(const char *s){
+	auto n = strlen(s);
+	auto ret = (char *)malloc(n + 1);
+	memcpy(ret, s, n + 1);
+	return ret;
+}
+
 #ifdef _MSC_VER
 // warning C4800: 'int' : forcing to bool 'true' or 'false' (performance warning)
 #pragma warning ( disable : 4800 )
@@ -693,7 +700,7 @@ namespace FLAC {
 
 			clear_field_name();
 
-			if(0 == (field_name_ = strdup(field_name))) {
+			if(0 == (field_name_ = my_strdup(field_name))) {
 				is_valid_ = false;
 			}
 			else {
