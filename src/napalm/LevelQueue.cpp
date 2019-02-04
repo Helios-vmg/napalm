@@ -31,7 +31,7 @@ void LevelQueue::push_data(const smart_c_struct<AudioBuffer> &buffer){
 		if (this->temp_buffer.size() == this->temp_buffer.capacity()){
 			LevelInstant li;
 			li.time = this->time;
-			li.duration = {this->temp_buffer.size(), this->format.freq};
+			li.duration = {(rational_t::int_type)this->temp_buffer.size(), this->format.freq};
 			li.level = this->level_function(this->temp_buffer);
 			this->time += li.duration;
 			this->temp_buffer.clear();
