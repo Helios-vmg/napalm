@@ -38,6 +38,7 @@
 #include <system_error>
 #include <atomic>
 #include <mutex> //need for call_once()
+#include <climits>
 
 #if STDMUTEX_RECURSION_CHECKS
 #include <cstdio>

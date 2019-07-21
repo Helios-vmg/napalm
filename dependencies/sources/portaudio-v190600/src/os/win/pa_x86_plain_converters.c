@@ -112,7 +112,7 @@ TODO:
     0011 1111 1000 0000 0000 0000 0000 0000 => 0x3F800000
 */
 
-#if defined(_WIN64) || defined(_WIN32_WCE)
+#if 1
 
 /*
 	-EMT64/AMD64 uses different asm

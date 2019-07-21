@@ -143,6 +143,12 @@ file(GLOB FLAC_SOURCES
 	"dependencies/sources/flac-1.3.2/src/libFLAC/window.c"
 )
 
+if (WIN32)
+	set(FLAC_SOURCES ${FLAC_SOURCES}
+		"dependencies/sources/flac-1.3.2/src/libFLAC/windows_unicode_filenames.c"
+	)
+endif (WIN32)
+
 include_directories(
 	dependencies/sources/flac-1.3.2/src/libFLAC/include
 	dependencies/sources/flac-1.3.2/include
@@ -241,10 +247,26 @@ file(GLOB PORTAUDIO_OUTPUT_SOURCES
 	"dependencies/sources/portaudio-v190600/src/common/pa_ringbuffer.c"
 	"dependencies/sources/portaudio-v190600/src/common/pa_stream.c"
 	"dependencies/sources/portaudio-v190600/src/common/pa_trace.c"
-	"dependencies/sources/portaudio-v190600/src/os/unix/pa_unix_hostapis.c"
-	"dependencies/sources/portaudio-v190600/src/os/unix/pa_unix_util.c"
-	"dependencies/sources/portaudio-v190600/src/hostapi/alsa/pa_linux_alsa.c"
 )
+
+if (WIN32)
+	set(PORTAUDIO_OUTPUT_SOURCES ${PORTAUDIO_OUTPUT_SOURCES}
+		"dependencies/sources/portaudio-v190600/src/os/win/pa_win_coinitialize.c"
+		"dependencies/sources/portaudio-v190600/src/os/win/pa_win_hostapis.c"
+		"dependencies/sources/portaudio-v190600/src/os/win/pa_win_util.c"
+		"dependencies/sources/portaudio-v190600/src/os/win/pa_win_waveformat.c"
+		"dependencies/sources/portaudio-v190600/src/os/win/pa_win_wdmks_utils.c"
+		"dependencies/sources/portaudio-v190600/src/os/win/pa_x86_plain_converters.c"
+	)
+endif (WIN32)
+
+if (UNIX)
+	set(PORTAUDIO_OUTPUT_SOURCES ${PORTAUDIO_OUTPUT_SOURCES}
+		"dependencies/sources/portaudio-v190600/src/os/unix/pa_unix_hostapis.c"
+		"dependencies/sources/portaudio-v190600/src/os/unix/pa_unix_util.c"
+		"dependencies/sources/portaudio-v190600/src/hostapi/alsa/pa_linux_alsa.c"
+	)
+endif (UNIX)
 
 include_directories(
 	dependencies/sources/portaudio-v190600/src/common
@@ -387,7 +409,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(portaudiooutput MODULE ${PA_OUTPUT_SOURCES})
-target_link_libraries(portaudiooutput portaudio asound)
+if (WIN32)
+	target_link_libraries(portaudiooutput portaudio winmm)
+endif (WIN32)
+if (UNIX)
+	target_link_libraries(portaudiooutput portaudio asound)
+endif (UNIX)
 
 #-------------------------------------------------------------------------------
 

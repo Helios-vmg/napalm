@@ -219,9 +219,13 @@ private:
 
     static unsigned int _hardware_concurrency_helper() noexcept
     {
+#if (defined _WIN32_WINNT) && (_WIN32_WINNT >= _WIN32_WINNT_WINXP)
         SYSTEM_INFO sysinfo;
         ::GetNativeSystemInfo(&sysinfo);
         return sysinfo.dwNumberOfProcessors;
+#else
+		return 1;
+#endif
     }
 public:
     typedef HANDLE native_handle_type;
