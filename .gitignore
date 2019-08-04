@@ -9,6 +9,7 @@ bin/
 *.tlog
 *.user
 *.tar.xz
+*.tar.bz2
 *.tar
 *.png
 *.html
@@ -31,3 +32,4 @@ TemporaryGeneratedFile_*.cs
 !cs-napalm/buttons/*
 *.ilk
 *.gz
+*.o
