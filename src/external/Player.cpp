@@ -38,6 +38,7 @@ extern "C"{
 	typedef void (*napalm_get_current_time_f)(PlayerPtr player, RationalValue *time, Level *level);
 	typedef void (*napalm_get_outputs_f)(PlayerPtr player, OutputDeviceList *dst);
 	typedef void (*napalm_select_output_f)(PlayerPtr player, const std::uint8_t *dst);
+	typedef void (*napalm_seek_to_time_f)(PlayerPtr player, RationalValue time);
 }
 
 static const wchar_t * const library_name = L"napalm";
@@ -110,6 +111,7 @@ class Player::Pimpl{
 	DECLARE_FUNC(napalm_get_current_time);
 	DECLARE_FUNC(napalm_get_outputs);
 	DECLARE_FUNC(napalm_select_output);
+	DECLARE_FUNC(napalm_seek_to_time);
 	PlayerPtr player;
 
 	void init(){
@@ -127,6 +129,7 @@ class Player::Pimpl{
 			GET_FUNCTION(napalm_get_current_time);
 			GET_FUNCTION(napalm_get_outputs);
 			GET_FUNCTION(napalm_select_output);
+			GET_FUNCTION(napalm_seek_to_time);
 		}catch (std::exception &){
 			throw std::runtime_error((std::string)"Required function not found: " + function_name);
 		}
@@ -182,6 +185,9 @@ public:
 	void open_output_device(const std::uint8_t *unique_id){
 		this->fp_napalm_select_output(this->player, unique_id);
 	}
+	void seek(const rational_t &time){
+		this->fp_napalm_seek_to_time(this->player, to_RationalValue(time));
+	}
 };
 
 Player::Player(){
@@ -220,4 +226,8 @@ std::vector<output_device> Player::get_output_devices(){
 
 void Player::open_output_device(const std::array<std::uint8_t, 32> &id){
 	this->pimpl->open_output_device(id.data());
+}
+
+void Player::seek(const rational_t &time){
+	this->pimpl->seek(time);
 }

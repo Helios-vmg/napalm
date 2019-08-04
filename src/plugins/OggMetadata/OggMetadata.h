@@ -90,7 +90,7 @@ public:
 	bool next(std::string &key, std::string &value);
 };
 
-	template <typename T>
+template <typename T>
 std::unique_ptr<std::pair<OggMetadataIterator, T>> OggMetadata::get_iterator(const T &x){
 	return std::make_unique<std::pair<OggMetadataIterator, T>>(OggMetadataIterator(this->map.begin(), this->map.end()), x);
 }

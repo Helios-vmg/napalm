@@ -28,6 +28,7 @@ public:
 	rational_t current_time();
 	std::vector<output_device> get_output_devices();
 	void open_output_device(const std::array<std::uint8_t, 32> &);
+	void seek(const rational_t &time);
 };
 
 std::string format_time(rational_t time);

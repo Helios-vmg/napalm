@@ -40,7 +40,14 @@ public:
 	}
 };
 
+enum class PlaybackMode{
+	Linear,
+	RepeatList,
+	RepeatSingle,
+};
+
 class Playlist{
+	PlaybackMode mode = PlaybackMode::Linear;
 	std::shared_ptr<Decoder> current_decoder;
 	std::vector<Track> tracks;
 	size_t current_index = 0;
@@ -60,19 +67,52 @@ public:
 		this->tracks.clear();
 		this->current_index = 0;
 	}
-	void next_track(){
+	bool next_track(){
 		if (!this->tracks.size())
-			return;
-		this->current_index++;
-		this->current_index %= this->tracks.size();
+			return false;
+		switch (this->mode){
+			case PlaybackMode::Linear:
+				if (this->current_index + 1 == this->tracks.size())
+					return false;
+				this->current_index++;
+				return true;
+			case PlaybackMode::RepeatList:
+				this->current_index++;
+				this->current_index %= this->tracks.size();
+				break;
+			case PlaybackMode::RepeatSingle:
+				return true;
+			default:
+				break;
+		}
+		return false;
 	}
-	void previous_track(){
+	bool previous_track(){
 		if (!this->tracks.size())
-			return;
-		this->current_index += this->tracks.size() - 1;
-		this->current_index %= this->tracks.size();
+			return false;
+		switch (this->mode){
+			case PlaybackMode::Linear:
+				if (!this->current_index)
+					return false;
+				this->current_index--;
+				return true;
+			case PlaybackMode::RepeatList:
+				this->current_index += this->tracks.size() - 1;
+				this->current_index %= this->tracks.size();
+				break;
+			case PlaybackMode::RepeatSingle:
+				return true;
+			default:
+				break;
+		}
 	}
 	size_t size() const{
 		return this->tracks.size();
+	}
+	PlaybackMode get_mode() const{
+		return this->mode;
+	}
+	void set_mode(PlaybackMode mode){
+		this->mode = mode;
 	}
 };

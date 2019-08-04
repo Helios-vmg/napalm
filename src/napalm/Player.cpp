@@ -433,7 +433,8 @@ audio_buffer_t Player::get_buffer(DecoderState &state, AudioFormat &format){
 	auto buffer = track->read();
 	if (!buffer || !buffer->sample_count){
 		state.load = true;
-		this->playlist.next_track();
+		if (!this->playlist.next_track())
+			this->status = Status::Stopped;
 		return audio_buffer_t{nullptr, release_buffer};
 	}
 	auto &extra_data = get_extra_data<BufferExtraData>(buffer);
